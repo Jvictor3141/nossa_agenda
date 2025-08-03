@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nossa Agenda Diária</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'rosa-bebe': '#fdf2f8',
+                        'rosa-claro': '#fce7f3',
+                        'rosa-medio': '#f9a8d4',
+                        'rosa-vibrante': '#ec4899',
+                        'lavanda': '#f3e8ff'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .task-completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-rosa-bebe min-h-screen font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-lavanda">
+        <div class="w-full pb-6">
+            <div class="text-center">
+                <h1 class="w-full bg-rosa-medio text-white text-4xl font-medium py-4 text-center">
+                    Nossa Agendinha
+                </h1>
+                <div id="current-date" class="text-5x1 text-gray-600"></div>
+                <div id="current-day" class="text-2xl font-medium text-rosa-vibrante mt-1"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+
+        <!-- Dia de Larissa -->
+        <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
+            <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de Larissa</h3>
+
+            <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+                
+                <!-- Manhã -->
+                <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                            <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                            Manhã
+                        </h2>
+                        <span class="text-sm text-gray-500">6h - 12h</span>
+                    </div>
+                    
+                    <div id="tasks-manha" class="space-y-3 mb-4 min-h-[200px]">
+                        <!-- Tarefas da manhã serão inseridas aqui -->
+                    </div>
+                    
+                    <div class="border-t border-lavanda pt-4">
+                        <div class="flex gap-2 w-full">
+                            <input 
+                                type="text" 
+                                id="input-manha" 
+                                placeholder="Nova tarefa da manhã..."
+                                class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
+                            >
+                            <button 
+                                onclick="addTask('manha')"
+                                class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tarde -->
+                <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                            <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                            Tarde
+                        </h2>
+                        <span class="text-sm text-gray-500">12h - 18h</span>
+                    </div>
+                    
+                    <div id="tasks-tarde" class="space-y-3 mb-4 min-h-[200px]">
+                        <!-- Tarefas da tarde serão inseridas aqui -->
+                    </div>
+                    
+                    <div class="border-t border-lavanda pt-4">
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="input-tarde" 
+                                placeholder="Nova tarefa da tarde..."
+                                class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
+                            >
+                            <button 
+                                onclick="addTask('tarde')"
+                                class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Noite -->
+                <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                            <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                            Noite
+                        </h2>
+                        <span class="text-sm text-gray-500">18h - 24h</span>
+                    </div>
+                    
+                    <div id="tasks-noite" class="space-y-3 mb-4 min-h-[200px]">
+                        <!-- Tarefas da noite serão inseridas aqui -->
+                    </div>
+                    
+                    <div class="border-t border-lavanda pt-4">
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="input-noite" 
+                                placeholder="Nova tarefa da noite..."
+                                class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
+                            >
+                            <button 
+                                onclick="addTask('noite')"
+                                class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+
+        <!-- Dia de João Victor -->
+        <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
+            <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de João Victor</h3>
+
+            <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+                
+                <!-- Manhã -->
+                <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                            <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                            Manhã
+                        </h2>
+                        <span class="text-sm text-gray-500">6h - 12h</span>
+                    </div>
+                    
+                    <div id="tasks-jv-manha" class="space-y-3 mb-4 min-h-[200px]">
+                        <!-- Tarefas da manhã serão inseridas aqui -->
+                    </div>
+                    
+                    <div class="border-t border-lavanda pt-4">
+                        <div class="flex gap-2 w-full">
+                            <input 
+                                type="text" 
+                                id="input-jv-manha" 
+                                placeholder="Nova tarefa da manhã..."
+                                class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
+                            >
+                            <button 
+                                onclick="addTaskJV('manha')"
+                                class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tarde -->
+                <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                            <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                            Tarde
+                        </h2>
+                        <span class="text-sm text-gray-500">12h - 18h</span>
+                    </div>
+                    
+                    <div id="tasks-jv-tarde" class="space-y-3 mb-4 min-h-[200px]">
+                        <!-- Tarefas da tarde serão inseridas aqui -->
+                    </div>
+                    
+                    <div class="border-t border-lavanda pt-4">
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="input-jv-tarde" 
+                                placeholder="Nova tarefa da tarde..."
+                                class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
+                            >
+                            <button 
+                                onclick="addTaskJV('tarde')"
+                                class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Noite -->
+                <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                            <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                            Noite
+                        </h2>
+                        <span class="text-sm text-gray-500">18h - 24h</span>
+                    </div>
+                    
+                    <div id="tasks-jv-noite" class="space-y-3 mb-4 min-h-[200px]">
+                        <!-- Tarefas da noite serão inseridas aqui -->
+                    </div>
+                    
+                    <div class="border-t border-lavanda pt-4">
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="input-jv-noite" 
+                                placeholder="Nova tarefa da noite..."
+                                class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
+                            >
+                            <button 
+                                onclick="addTaskJV('noite')"
+                                class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Resumo do dia -->
+        <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
+            <h3 class="text-lg font-medium text-gray-800 mb-4">Resumo do Dia</h3>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <div id="count-manha" class="text-2xl font-bold text-rosa-vibrante">0</div>
+                    <div class="text-sm text-gray-600">Manhã</div>
+                </div>
+                <div>
+                    <div id="count-tarde" class="text-2xl font-bold text-rosa-vibrante">0</div>
+                    <div class="text-sm text-gray-600">Tarde</div>
+                </div>
+                <div>
+                    <div id="count-noite" class="text-2xl font-bold text-rosa-vibrante">0</div>
+                    <div class="text-sm text-gray-600">Noite</div>
+                </div>
+            </div>
+            <button onclick="saveTasksToFirebase()" class="mt-2 px-4 py-2 bg-rosa-vibrante text-white rounded-lg hover:bg-rosa-medio transition-all">
+                Salvar na nuvem
+            </button>
+            <button onclick="loadTasksFromFirebase()" class="mt-2 ml-2 px-4 py-2 bg-lavanda text-gray-800 rounded-lg hover:bg-rosa-claro transition-all">
+                Carregar da nuvem
+            </button>
+        </div>
+    </main>
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+    // Configuração do Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyDoL4R2GmKy7gqnWXKei8V5lflH4plEMkM",
+        authDomain: "agenda-f58b7.firebaseapp.com",
+        projectId: "agenda-f58b7",
+        storageBucket: "agenda-f58b7.firebasestorage.app",
+        messagingSenderId: "88974735864",
+        appId: "1:88974735864:web:0e9a029173d6409f61be0d",
+        measurementId: "G-0DSR8JY53N"
+    };
+
+    // Inicializa Firebase e Firestore e expõe no window
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.db = db;
+    window.firestoreDoc = doc;
+    window.firestoreSetDoc = setDoc;
+    window.firestoreGetDoc = getDoc;
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
+
