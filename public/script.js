@@ -90,6 +90,7 @@ function addTask(periodo) {
     input.value = '';
     
     renderTasks(periodo);
+    saveTasksToFirebase();
     updateTaskCounts();
     
     // Animar a adição da nova tarefa
@@ -118,6 +119,9 @@ function addTaskJV(periodo) {
     agendaDataJV[periodo].push(newTask);
     input.value = '';
     renderTasksJV(periodo);
+    saveTasksToFirebase();
+    updateTaskCounts();
+
     setTimeout(() => {
         const taskElement = document.querySelector(`[data-task-jv-id="${newTask.id}"]`);
         if (taskElement) {
@@ -131,12 +135,15 @@ function removeTask(periodo, taskId) {
     agendaData[periodo] = agendaData[periodo].filter(task => task.id !== taskId);
     renderTasks(periodo);
     updateTaskCounts();
+    saveTasksToFirebase();
 }
 
 // Remover tarefa para João Victor
 function removeTaskJV(periodo, taskId) {
     agendaDataJV[periodo] = agendaDataJV[periodo].filter(task => task.id !== taskId);
     renderTasksJV(periodo);
+    updateTaskCounts();
+    saveTasksToFirebase();
 }
 
 // Alternar status da tarefa para Larissa
