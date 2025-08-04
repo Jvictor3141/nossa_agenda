@@ -153,6 +153,7 @@ function toggleTask(periodo, taskId) {
         task.completed = !task.completed;
         renderTasks(periodo);
         updateTaskCounts();
+        saveTasksToFirebase();
     }
 }
 
@@ -162,6 +163,8 @@ function toggleTaskJV(periodo, taskId) {
     if (task) {
         task.completed = !task.completed;
         renderTasksJV(periodo);
+        updateTaskCounts();
+        saveTasksToFirebase();
     }
 }
 
