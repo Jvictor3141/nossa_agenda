@@ -27,6 +27,7 @@ const meses = [
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', function() {
     updateCurrentDate();
+    loadTasksFromFirebase();
     renderAllTasks();
     renderAllTasksJV();
     updateTaskCounts();
