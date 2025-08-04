@@ -279,6 +279,17 @@ function updateTaskCounts() {
     });
 }
 
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 1800);
+}
+
 // Salvar todas as tarefas (Larissa e João Victor) no Firestore
 async function saveTasksToFirebase() {
     const today = new Date().toDateString();
@@ -291,9 +302,9 @@ async function saveTasksToFirebase() {
                 updatedAt: new Date()
             }
         );
-        alert('Tarefas salvas na nuvem com sucesso!');
+        showToast('Tarefas salvas na nuvem com sucesso!');
     } catch (error) {
-        alert('Erro ao salvar na nuvem: ' + error.message);
+        showToast('Erro ao salvar na nuvem!');
     }
 }
 
@@ -311,11 +322,11 @@ async function loadTasksFromFirebase() {
             renderAllTasks();
             renderAllTasksJV();
             updateTaskCounts();
-            alert('Tarefas carregadas da nuvem!');
+            showToast('Tarefas carregadas da nuvem!');
         } else {
-            alert('Nenhuma tarefa encontrada na nuvem para hoje.');
+            showToast('Nenhuma tarefa encontrada na nuvem para hoje.');
         }
     } catch (error) {
-        alert('Erro ao carregar da nuvem: ' + error.message);
+        showToast('Erro ao carregar da nuvem!');
     }
 }
