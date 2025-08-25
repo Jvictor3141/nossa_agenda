@@ -28,6 +28,7 @@ const meses = [
 document.addEventListener('DOMContentLoaded', function() {
     updateCurrentDate();
     loadTasksFromFirebase();
+    loadFinancialDataFromFirebase();
     renderAllTasks();
     renderAllTasksJV();
     updateTaskCounts();
@@ -51,7 +52,110 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Listener para atualizações em tempo real das finanças
+    if (window.firestoreOnSnapshot) {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        window.firestoreOnSnapshot(
+            window.firestoreDoc(window.db, "financas", currentMonth),
+            (docSnap) => {
+                if (docSnap.exists()) {
+                    financasData = docSnap.data();
+                } else {
+                    financasData = { entradas: [], gastos: [] };
+                }
+                updateFinancialSummary();
+                renderTransactions();
+            }
+        );
+    }
+
+// Listener para atualizações em tempo real da agenda
+    if (window.firestoreOnSnapshot) {
+    const today = new Date().toDateString();
+    window.firestoreOnSnapshot(
+        window.firestoreDoc(window.db, "agendas", today),
+        (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                agendaData = data.larissa || { manha: [], tarde: [], noite: [] };
+                agendaDataJV = data.joaovictor || { manha: [], tarde: [], noite: [] };
+                renderAllTasks();
+                renderAllTasksJV();
+                updateTaskCounts();
+            }
+        }
+    );
+}
 });
+
+// Event listeners para formulários de finanças
+const formEntrada = document.getElementById('form-entrada');
+const formGasto = document.getElementById('form-gasto');
+
+if (formEntrada) {
+    formEntrada.addEventListener('submit', function(e) {
+        e.preventDefault();
+        addEntrada();
+    });
+}
+
+if (formGasto) {
+    formGasto.addEventListener('submit', function(e) {
+        e.preventDefault();
+        addGasto();
+    });
+}
+
+// Event listener para filtro de transações
+const filtroTipo = document.getElementById('filtro-tipo');
+if (filtroTipo) {
+    filtroTipo.addEventListener('change', function() {
+        renderTransactions();
+    });
+}
+
+// ===== MENU HAMBÚRGUER =====
+function toggleMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('menu-overlay');
+    
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+}
+
+function closeMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('menu-overlay');
+    
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+}
+
+function showSection(section) {
+    const agendaSection = document.getElementById('agenda-section');
+    const financasSection = document.getElementById('financas-section');
+    const pageTitle = document.getElementById('page-title');
+    
+    // Esconder todas as seções
+    agendaSection.classList.add('section-hidden');
+    financasSection.classList.add('section-hidden');
+    
+    // Mostrar seção selecionada
+    if (section === 'agenda') {
+        agendaSection.classList.remove('section-hidden');
+        pageTitle.textContent = 'Nossa Agendinha';
+        currentSection = 'agenda';
+    } else if (section === 'financas') {
+        financasSection.classList.remove('section-hidden');
+        pageTitle.textContent = 'Controle Financeiro';
+        currentSection = 'financas';
+        updateFinancialSummary();
+        renderTransactions();
+    }
+    
+    closeMenu();
+}
 
 // Atualizar data atual
 function updateCurrentDate() {
@@ -280,15 +384,228 @@ function updateTaskCounts() {
     });
 }
 
+// ===== FUNÇÕES DE TOAST =====
+// Toast com timeout para evitar sobreposição
+let toastTimeout;
 function showToast(message) {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.classList.remove('opacity-0', 'pointer-events-none');
     toast.classList.add('opacity-100');
-    setTimeout(() => {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
         toast.classList.remove('opacity-100');
         toast.classList.add('opacity-0', 'pointer-events-none');
     }, 1800);
+}
+
+// ===== FUNÇÕES DE FINANÇAS =====
+function addEntrada() {
+    const valor = parseFloat(document.getElementById('valor-entrada').value);
+    const descricao = document.getElementById('desc-entrada').value.trim();
+    const categoria = document.getElementById('cat-entrada').value;
+    const pessoa = document.getElementById('pessoa-entrada').value;
+    
+    if (!valor || valor <= 0 || !descricao) {
+        alert('Por favor, preencha todos os campos corretamente.');
+        return;
+    }
+    
+    const entrada = {
+        id: generateId(),
+        tipo: 'entrada',
+        valor: valor,
+        descricao: descricao,
+        categoria: categoria,
+        pessoa: pessoa,
+        data: new Date().toISOString()
+    };
+    
+    financasData.entradas.push(entrada);
+    
+    // Limpar formulário
+    document.getElementById('form-entrada').reset();
+    
+    saveFinancialDataToFirebase();
+    updateFinancialSummary();
+    renderTransactions();
+}
+
+function addGasto() {
+    const valor = parseFloat(document.getElementById('valor-gasto').value);
+    const descricao = document.getElementById('desc-gasto').value.trim();
+    const categoria = document.getElementById('cat-gasto').value;
+    const tipo = document.getElementById('tipo-gasto').value;
+    
+    if (!valor || valor <= 0 || !descricao) {
+        alert('Por favor, preencha todos os campos corretamente.');
+        return;
+    }
+    
+    const gasto = {
+        id: generateId(),
+        tipo: 'gasto',
+        valor: valor,
+        descricao: descricao,
+        categoria: categoria,
+        pessoa: tipo,
+        data: new Date().toISOString()
+    };
+    
+    financasData.gastos.push(gasto);
+    
+    // Limpar formulário
+    document.getElementById('form-gasto').reset();
+    
+    saveFinancialDataToFirebase();
+    updateFinancialSummary();
+    renderTransactions();
+}
+
+function updateFinancialSummary() {
+    const totalEntradas = financasData.entradas.reduce((sum, entrada) => sum + entrada.valor, 0);
+    const totalGastos = financasData.gastos.reduce((sum, gasto) => sum + gasto.valor, 0);
+    const saldo = totalEntradas - totalGastos;
+    
+    const totalEntradasElement = document.getElementById('total-entradas');
+    const totalGastosElement = document.getElementById('total-gastos');
+    const saldoAtualElement = document.getElementById('saldo-atual');
+    
+    if (totalEntradasElement) {
+        totalEntradasElement.textContent = formatCurrency(totalEntradas);
+    }
+    
+    if (totalGastosElement) {
+        totalGastosElement.textContent = formatCurrency(totalGastos);
+    }
+    
+    if (saldoAtualElement) {
+        saldoAtualElement.textContent = formatCurrency(saldo);
+        saldoAtualElement.className = `text-2xl font-bold ${saldo >= 0 ? 'text-rosa-vibrante' : 'text-red-600'}`;
+    }
+}
+
+function renderTransactions() {
+    const container = document.getElementById('lista-transacoes');
+    if (!container) return;
+    
+    const filtro = document.getElementById('filtro-tipo')?.value || 'todos';
+    
+    // Combinar e ordenar transações
+    let allTransactions = [];
+    
+    if (filtro === 'todos' || filtro === 'entrada') {
+        allTransactions = allTransactions.concat(financasData.entradas);
+    }
+    
+    if (filtro === 'todos' || filtro === 'gasto') {
+        allTransactions = allTransactions.concat(financasData.gastos);
+    }
+    
+    // Ordenar por data (mais recente primeiro)
+    allTransactions.sort((a, b) => new Date(b.data) - new Date(a.data));
+    
+    if (allTransactions.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-gray-400 py-8">
+                <div class="text-4xl mb-2">📊</div>
+                <div>Nenhuma transação encontrada</div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = allTransactions.map(transaction => {
+        const isEntrada = transaction.tipo === 'entrada';
+        const icon = getCategoryIcon(transaction.categoria, transaction.tipo);
+        const pessoaText = getPessoaText(transaction.pessoa);
+        const dataFormatada = new Date(transaction.data).toLocaleDateString('pt-BR');
+        
+        return `
+            <div class="transaction-item flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">${icon}</span>
+                    <div>
+                        <div class="font-medium text-gray-800">${transaction.descricao}</div>
+                        <div class="text-sm text-gray-500">${pessoaText} • ${dataFormatada}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-bold ${isEntrada ? 'text-green-600' : 'text-red-600'}">
+                        ${isEntrada ? '+' : '-'} ${formatCurrency(transaction.valor)}
+                    </div>
+                    <button onclick="removeTransaction('${transaction.tipo}', '${transaction.id}')" 
+                            class="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                        Remover
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+//remover transação
+function removeTransaction(tipo, id) {
+    if (confirm('Tem certeza que deseja remover esta transação?')) {
+        if (tipo === 'entrada') {
+            financasData.entradas = financasData.entradas.filter(item => item.id !== id);
+        } else {
+            financasData.gastos = financasData.gastos.filter(item => item.id !== id);
+        }
+        
+        saveFinancialDataToFirebase();
+        updateFinancialSummary();
+        renderTransactions();
+    }
+}
+
+function getCategoryIcon(categoria, tipo) {
+    const icons = {
+        // Entradas
+        salario: '💼',
+        freelance: '💻',
+        presente: '🎁',
+        investimento: '📈',
+        // Gastos
+        alimentacao: '🍕',
+        transporte: '🚗',
+        casa: '🏠',
+        lazer: '🎮',
+        roupas: '👕',
+        saude: '💊',
+        educacao: '📚',
+        outros: '🔄'
+    };
+    
+    return icons[categoria] || '🔄';
+}
+
+function getPessoaText(pessoa) {
+    const pessoas = {
+        pessoa1: 'Pessoa 1',
+        pessoa2: 'Pessoa 2',
+        ambos: 'Ambos',
+        compartilhado: 'Compartilhado'
+    };
+    
+    return pessoas[pessoa] || pessoa;
+}
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(value);
+}
+
+// Limpar dados financeiros do mês atual
+function clearFinancialData() {
+    if (confirm('Tem certeza que deseja limpar todos os dados financeiros do mês atual?')) {
+        financasData = { entradas: [], gastos: [] };
+        saveFinancialDataToFirebase();
+        updateFinancialSummary();
+        renderTransactions();
+    }
 }
 
 // Salvar todas as tarefas (Larissa e João Victor) no Firestore
@@ -306,6 +623,20 @@ async function saveTasksToFirebase() {
         showToast('Tarefas salvas na nuvem com sucesso!');
     } catch (error) {
         showToast('Erro ao salvar na nuvem!');
+    }
+}
+
+// Salvar dados financeiros no Firestore
+async function saveFinancialDataToFirebase() {
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    try {
+        await window.firestoreSetDoc(
+            window.firestoreDoc(window.db, "financas", currentMonth),
+            financasData
+        );
+        showToast('Finanças salvas na nuvem!');
+    } catch (error) {
+        showToast('Erro ao salvar finanças na nuvem!');
     }
 }
 
@@ -329,5 +660,25 @@ async function loadTasksFromFirebase() {
         }
     } catch (error) {
         showToast('Erro ao carregar da nuvem!');
+    }
+}
+
+// Carregar dados financeiros do Firestore
+async function loadFinancialDataFromFirebase() {
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    try {
+        const docSnap = await window.firestoreGetDoc(
+            window.firestoreDoc(window.db, "financas", currentMonth)
+        );
+        if (docSnap.exists()) {
+            financasData = docSnap.data();
+        } else {
+            financasData = { entradas: [], gastos: [] };
+        }
+        updateFinancialSummary();
+        renderTransactions();
+        showToast('Finanças carregadas da nuvem!');
+    } catch (error) {
+        showToast('Erro ao carregar finanças da nuvem!');
     }
 }
