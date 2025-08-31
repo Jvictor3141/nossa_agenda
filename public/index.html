@@ -89,6 +89,41 @@
                 opacity: 1;
             }
         }
+
+        /* FullCalendar custom theme */
+        .fc {
+            background: transparent;
+            font-family: inherit;
+        }
+        .fc-toolbar-title {
+            color: #ec4899; /* rosa-vibrante */
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+        .fc-daygrid-day.fc-day-today {
+            background: #fce7f3 !important; /* rosa-claro */
+        }
+        .fc-button-primary {
+            background-color: #f9a8d4 !important; /* rosa-medio */
+            border: none !important;
+            color: #fff !important;
+            border-radius: 0.5rem !important;
+        }
+        .fc-button-primary:not(:disabled):hover {
+            background-color: #ec4899 !important; /* rosa-vibrante */
+        }
+        .fc-daygrid-event {
+            background: #f9a8d4 !important;
+            color: #fff !important;
+            border: none !important;
+            border-radius: 0.5rem !important;
+            font-size: 0.95rem;
+            padding: 2px 6px;
+        }
+
+        #calendar-container {
+        transition-property: max-height, opacity;
+        }
     </style>
 </head>
 <body class="bg-rosa-bebe min-h-screen font-sans">
@@ -153,17 +188,16 @@
         <!-- Seção de Agenda -->
         <div id="agenda-section">
 
-            <div class="mb-6">
-                <div id="fullcalendar"></div>
+            <!-- Calendário -->
+             <button id="toggle-calendar" class="flex items-center gap-2 text-rosa-vibrante font-medium focus:outline-none bg-rosa-medio/15 hover:bg-rosa-medio/40 transition-colors rounded-lg px-3 py-2 mb-2">
+                <span class="text-2xl">📅</span>
+                <span>Mostrar calendário</span>
+            </button>
+
+            <div id="calendar-container" class="mb-6 overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+                <div id="fullcalendar" class="bg-white rounded-xl shadow-md border border-lavanda p-4"></div>
             </div>
 
-            <div class="flex items-center gap-4 mb-4">
-            <label for="agenda-date" class="text-gray-700 font-medium">Escolha a data:</label>
-            <input 
-                type="date" 
-                id="agenda-date" 
-                class="px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
-            </div>
             <!-- Dia de Larissa -->
             <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
                 <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de Larissa</h3>

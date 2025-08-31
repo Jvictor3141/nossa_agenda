@@ -89,29 +89,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     );}
 
-    const agendaDateInput = document.getElementById('agenda-date');
-    if (agendaDateInput) {
-        // Inicializa o input com a data de hoje
-        agendaDateInput.valueAsDate = new Date();
-        agendaDateInput.addEventListener('change', function() {
-            // Atualiza a data selecionada
-            const date = new Date(this.value);
-            selectedAgendaDate = date.toDateString();
-            loadTasksFromFirebase();
-        });}
-
     // Inicializar FullCalendar
     const calendarEl = document.getElementById('fullcalendar');
     if (calendarEl) {
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             locale: 'pt-br',
-            height: 500,
+            height: 350,
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
                 right: ''
             },
+
+            buttonText: {
+            today: 'Hoje'
+            },
+
             events: async function(fetchInfo, successCallback, failureCallback) {
                 try {
                     const agendasRef = window.firestoreCollection(window.db, "agendas");
@@ -142,18 +136,64 @@ document.addEventListener('DOMContentLoaded', function() {
                     failureCallback(err);
                 }
             },
+
             dateClick: function(info) {
+
                 // Atualiza o input de data ao clicar em um dia do calendário
-                const agendaDateInput = document.getElementById('agenda-date');
-                if (agendaDateInput) {
-                    agendaDateInput.value = info.dateStr;
-                    // Dispara o evento de change para carregar as tarefas desse dia
-                    agendaDateInput.dispatchEvent(new Event('change'));
+                const [year, month, day] = info.dateStr.split('-');
+                const clickedDate = new Date(Number(year), Number(month) - 1, Number(day));
+                selectedAgendaDate = clickedDate.toDateString();
+                loadTasksFromFirebase();
+                updateCurrentDate(clickedDate);  
+            },
+
+            datesSet: function(info) {
+                // info.start é o primeiro dia visível no calendário (pode ser do mês anterior)
+                // info.view.currentStart é o primeiro dia do mês atual
+                // info.view.currentEnd é o último dia do mês atual
+                // info.view.currentStart e info.view.currentEnd delimitam o mês exibido
+
+                // Vamos pegar o dia central do calendário (info.view.currentStart)
+                const today = new Date();
+                const calendarMonth = info.view.currentStart.getMonth();
+                const calendarYear = info.view.currentStart.getFullYear();
+
+                // Se o calendário mudou para o mês atual, e o botão "Hoje" foi clicado,
+                // então atualize a agenda para hoje
+                if (
+                    today.getMonth() === calendarMonth &&
+                    today.getFullYear() === calendarYear
+                ) {
+                    // Só atualize se selectedAgendaDate NÃO for hoje (evita recarregar à toa)
+                    if (selectedAgendaDate !== today.toDateString()) {
+                        selectedAgendaDate = today.toDateString();
+                        loadTasksFromFirebase();
+                        updateCurrentDate(today);
+                    }
                 }
-            }
+            },
         });
-        calendar.render();
-    }
+        calendar.render();}
+
+        // Toggle para mostrar/esconder calendário
+        const toggleCalendarBtn = document.getElementById('toggle-calendar');
+        const calendarContainer = document.getElementById('calendar-container');
+        let calendarVisible = false;
+
+        if (toggleCalendarBtn && calendarContainer) {
+            toggleCalendarBtn.addEventListener('click', function() {
+                calendarVisible = !calendarVisible;
+                if (calendarVisible) {
+                    calendarContainer.classList.remove('max-h-0', 'opacity-0');
+                    calendarContainer.classList.add('max-h-[700px]', 'opacity-100');
+                    toggleCalendarBtn.querySelector('span:last-child').textContent = 'Ocultar calendário';
+                } else {
+                    calendarContainer.classList.add('max-h-0', 'opacity-0');
+                    calendarContainer.classList.remove('max-h-[700px]', 'opacity-100');
+                    toggleCalendarBtn.querySelector('span:last-child').textContent = 'Mostrar calendário';
+                }
+            });
+        }
 });
 
 // Event listeners para formulários de finanças
@@ -225,8 +265,8 @@ function showSection(section) {
 }
 
 // Atualizar data atual
-function updateCurrentDate() {
-    const now = new Date();
+function updateCurrentDate(dateObj) {
+    const now = dateObj || new Date();
     const dayName = diasSemana[now.getDay()];
     const day = now.getDate();
     const month = meses[now.getMonth()];
