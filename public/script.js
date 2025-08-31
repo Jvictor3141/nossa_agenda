@@ -35,26 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
     renderAllTasks();
     renderAllTasksJV();
     updateTaskCounts();
-    
-    // Event listeners para Larissa
-    ['manha', 'tarde', 'noite'].forEach(periodo => {
-        const input = document.getElementById(`input-${periodo}`);
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addTask(periodo);
-            }
-        });
-    });
-
-    // Event listeners para João Victor
-    ['manha', 'tarde', 'noite'].forEach(periodo => {
-        const inputJV = document.getElementById(`input-jv-${periodo}`);
-        inputJV.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addTaskJV(periodo);
-            }
-        });
-    });
 
     // Listener para atualizações em tempo real das finanças
     if (window.firestoreOnSnapshot) {
@@ -72,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         );}
 
-// Listener para atualizações em tempo real da agenda
+    // Listener para atualizações em tempo real da agenda
     if (window.firestoreOnSnapshot) {
     const today = new Date().toDateString();
     window.firestoreOnSnapshot(
@@ -89,111 +69,97 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     );}
 
-    // Inicializar FullCalendar
-    const calendarEl = document.getElementById('fullcalendar');
-    if (calendarEl) {
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'pt-br',
-            height: 350,
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: ''
-            },
+    // FULLCALENDAR - Inicialização ao clicar no botão
+    const toggleCalendarBtn = document.getElementById('toggle-calendar');
+    const calendarContainer = document.getElementById('calendar-container');
+    let calendarVisible = false;
+    let calendarInstance = null;
 
-            buttonText: {
-            today: 'Hoje'
-            },
+    if (toggleCalendarBtn && calendarContainer) {
+        toggleCalendarBtn.addEventListener('click', function() {
+            calendarVisible = !calendarVisible;
+            if (calendarVisible) {
+                calendarContainer.classList.add('max-h-full', 'opacity-100');
+                calendarContainer.classList.remove('max-h-0', 'opacity-0');
+                toggleCalendarBtn.querySelector('span:last-child').textContent = 'Ocultar calendário';
 
-            events: async function(fetchInfo, successCallback, failureCallback) {
-                try {
-                    const agendasRef = window.firestoreCollection(window.db, "agendas");
-                    const snapshot = await window.firestoreGetDocs(agendasRef);
-                    const events = [];
-                    snapshot.forEach(docSnap => {
-                        const data = docSnap.data();
-                        const date = docSnap.id; // id do doc é a data
-                        ['manha', 'tarde', 'noite'].forEach(periodo => {
-                            (data.larissa?.[periodo] || []).forEach(task => {
-                                events.push({
-                                    title: `Larissa: ${task.text}`,
-                                    start: new Date(date),
-                                    allDay: true
+                // Só inicializa o calendário na primeira vez
+                if (!calendarInstance) {
+                    const calendarEl = document.getElementById('fullcalendar');
+                    calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        locale: 'pt-br',
+                        height: 350,
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: ''
+                        },
+                        buttonText: {
+                            today: 'Hoje'
+                        },
+                        events: async function(fetchInfo, successCallback, failureCallback) {
+                            try {
+                                const agendasRef = window.firestoreCollection(window.db, "agendas");
+                                const snapshot = await window.firestoreGetDocs(agendasRef);
+                                const events = [];
+                                snapshot.forEach(docSnap => {
+                                    const data = docSnap.data();
+                                    const date = docSnap.id;
+                                    ['manha', 'tarde', 'noite'].forEach(periodo => {
+                                        (data.larissa?.[periodo] || []).forEach(task => {
+                                            events.push({
+                                                title: `Larissa: ${task.text}`,
+                                                start: new Date(date),
+                                                allDay: true
+                                            });
+                                        });
+                                        (data.joaovictor?.[periodo] || []).forEach(task => {
+                                            events.push({
+                                                title: `João Victor: ${task.text}`,
+                                                start: new Date(date),
+                                                allDay: true
+                                            });
+                                        });
+                                    });
                                 });
-                            });
-                            (data.joaovictor?.[periodo] || []).forEach(task => {
-                                events.push({
-                                    title: `João Victor: ${task.text}`,
-                                    start: new Date(date),
-                                    allDay: true
-                                });
-                            });
-                        });
+                                successCallback(events);
+                            } catch (err) {
+                                failureCallback(err);
+                            }
+                        },
+                        dateClick: function(info) {
+                            const [year, month, day] = info.dateStr.split('-');
+                            const clickedDate = new Date(Number(year), Number(month) - 1, Number(day));
+                            selectedAgendaDate = clickedDate.toDateString();
+                            loadTasksFromFirebase();
+                            updateCurrentDate(clickedDate);
+                        },
+                        datesSet: function(info) {
+                            const today = new Date();
+                            const calendarMonth = info.view.currentStart.getMonth();
+                            const calendarYear = info.view.currentStart.getFullYear();
+                            if (
+                                today.getMonth() === calendarMonth &&
+                                today.getFullYear() === calendarYear
+                            ) {
+                                if (selectedAgendaDate !== today.toDateString()) {
+                                    selectedAgendaDate = today.toDateString();
+                                    loadTasksFromFirebase();
+                                    updateCurrentDate(today);
+                                }
+                            }
+                        }
                     });
-                    successCallback(events);
-                } catch (err) {
-                    failureCallback(err);
+                    calendarInstance.render();
                 }
-            },
-
-            dateClick: function(info) {
-
-                // Atualiza o input de data ao clicar em um dia do calendário
-                const [year, month, day] = info.dateStr.split('-');
-                const clickedDate = new Date(Number(year), Number(month) - 1, Number(day));
-                selectedAgendaDate = clickedDate.toDateString();
-                loadTasksFromFirebase();
-                updateCurrentDate(clickedDate);  
-            },
-
-            datesSet: function(info) {
-                // info.start é o primeiro dia visível no calendário (pode ser do mês anterior)
-                // info.view.currentStart é o primeiro dia do mês atual
-                // info.view.currentEnd é o último dia do mês atual
-                // info.view.currentStart e info.view.currentEnd delimitam o mês exibido
-
-                // Vamos pegar o dia central do calendário (info.view.currentStart)
-                const today = new Date();
-                const calendarMonth = info.view.currentStart.getMonth();
-                const calendarYear = info.view.currentStart.getFullYear();
-
-                // Se o calendário mudou para o mês atual, e o botão "Hoje" foi clicado,
-                // então atualize a agenda para hoje
-                if (
-                    today.getMonth() === calendarMonth &&
-                    today.getFullYear() === calendarYear
-                ) {
-                    // Só atualize se selectedAgendaDate NÃO for hoje (evita recarregar à toa)
-                    if (selectedAgendaDate !== today.toDateString()) {
-                        selectedAgendaDate = today.toDateString();
-                        loadTasksFromFirebase();
-                        updateCurrentDate(today);
-                    }
-                }
-            },
+            } else {
+                calendarContainer.classList.add('max-h-0', 'opacity-0');
+                calendarContainer.classList.remove('max-h-full', 'opacity-100');
+                toggleCalendarBtn.querySelector('span:last-child').textContent = 'Mostrar calendário';
+            }
         });
-        calendar.render();}
-
-        // Toggle para mostrar/esconder calendário
-        const toggleCalendarBtn = document.getElementById('toggle-calendar');
-        const calendarContainer = document.getElementById('calendar-container');
-        let calendarVisible = false;
-
-        if (toggleCalendarBtn && calendarContainer) {
-            toggleCalendarBtn.addEventListener('click', function() {
-                calendarVisible = !calendarVisible;
-                if (calendarVisible) {
-                    calendarContainer.classList.remove('max-h-0', 'opacity-0');
-                    calendarContainer.classList.add('max-h-[700px]', 'opacity-100');
-                    toggleCalendarBtn.querySelector('span:last-child').textContent = 'Ocultar calendário';
-                } else {
-                    calendarContainer.classList.add('max-h-0', 'opacity-0');
-                    calendarContainer.classList.remove('max-h-[700px]', 'opacity-100');
-                    toggleCalendarBtn.querySelector('span:last-child').textContent = 'Mostrar calendário';
-                }
-            });
-        }
+    }
 });
 
 // Event listeners para formulários de finanças
@@ -281,65 +247,56 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Adicionar nova tarefa para Larissa
-function addTask(periodo) {
-    const input = document.getElementById(`input-${periodo}`);
-    const taskText = input.value.trim();
-    
-    if (taskText === '') {
-        input.focus();
-        return;
-    }
-    
-    const newTask = {
-        id: generateId(),
-        text: taskText,
-        completed: false,
-        createdAt: new Date().toISOString()
-    };
-    
-    agendaData[periodo].push(newTask);
-    input.value = '';
-    
-    renderTasks(periodo);
-    saveTasksToFirebase();
-    updateTaskCounts();
-    
-    // Animar a adição da nova tarefa
-    setTimeout(() => {
-        const taskElement = document.querySelector(`[data-task-id="${newTask.id}"]`);
-        if (taskElement) {
-            taskElement.classList.add('fade-in');
-        }
-    }, 10);
+// adiciona tarefas unificada
+function getPeriodoByHora(hora) {
+    const [h] = hora.split(':').map(Number);
+    if (h >= 6 && h < 12) return 'manha';
+    if (h >= 12 && h < 18) return 'tarde';
+    return 'noite';
 }
 
-// Adicionar nova tarefa para João Victor
-function addTaskJV(periodo) {
-    const input = document.getElementById(`input-jv-${periodo}`);
+function addTaskUnificada(usuario) {
+    const input = document.getElementById(usuario === 'larissa' ? 'input-larissa' : 'input-jv');
+    const horaInput = document.getElementById(usuario === 'larissa' ? 'input-hora-larissa' : 'input-hora-jv');
     const taskText = input.value.trim();
-    if (taskText === '') {
-        input.focus();
+    const hora = horaInput.value;
+    const cor = document.querySelector(`input[name="cor-${usuario === 'larissa' ? 'larissa' : 'jv'}"]:checked`).value;
+
+    if (!taskText || !hora) {
+        showToast('Preencha a tarefa e o horário!');
         return;
     }
+
+    const periodo = getPeriodoByHora(hora);
     const newTask = {
         id: generateId(),
         text: taskText,
+        hora: hora,
+        cor: cor,
         completed: false,
         createdAt: new Date().toISOString()
     };
-    agendaDataJV[periodo].push(newTask);
+
+    if (usuario === 'larissa') {
+        agendaData[periodo].push(newTask);
+    } else {
+        agendaDataJV[periodo].push(newTask);
+    }
+
     input.value = '';
-    renderTasksJV(periodo);
+    horaInput.value = '';
+    // Resetar o radio para o padrão (primeiro radio)
+    const corRadios = document.querySelectorAll(`input[name="cor-${usuario === 'larissa' ? 'larissa' : 'jv'}"]`);
+    if (corRadios.length) corRadios[0].checked = true;
+
+    if (calendarInstance) {
+    calendarInstance.refetchEvents();
+    }
+
+    renderAllTasks();
+    renderAllTasksJV();
     saveTasksToFirebase();
     updateTaskCounts();
-
-    setTimeout(() => {
-        const taskElement = document.querySelector(`[data-task-jv-id="${newTask.id}"]`);
-        if (taskElement) {
-            taskElement.classList.add('fade-in');
-        }
-    }, 10);
 }
 
 // Remover tarefa para Larissa
@@ -348,6 +305,10 @@ function removeTask(periodo, taskId) {
     renderTasks(periodo);
     updateTaskCounts();
     saveTasksToFirebase();
+
+    if (calendarInstance) {
+    calendarInstance.refetchEvents();
+    }
 }
 
 // Remover tarefa para João Victor
@@ -356,6 +317,10 @@ function removeTaskJV(periodo, taskId) {
     renderTasksJV(periodo);
     updateTaskCounts();
     saveTasksToFirebase();
+
+    if (calendarInstance) {
+    calendarInstance.refetchEvents();
+    }
 }
 
 // Alternar status da tarefa para Larissa
@@ -396,19 +361,22 @@ function renderTasks(periodo) {
     }
     
     container.innerHTML = tasks.map(task => `
-        <div class="flex items-center gap-3 p-3 bg-rosa-claro rounded-lg border border-lavanda transition-all duration-300 hover:shadow-md" data-task-id="${task.id}">
+        <div class="flex items-center justify-between p-3 rounded-lg border border-lavanda transition-all duration-300 hover:shadow-md"
+             style="background-color: ${task.cor};"
+             data-task-id="${task.id}">
             <input 
                 type="checkbox" 
                 ${task.completed ? 'checked' : ''} 
                 onchange="toggleTask('${periodo}', '${task.id}')"
-                class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300"
+                class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300 mr-3"
             >
-            <span class="flex-1 ${task.completed ? 'task-completed' : ''} text-gray-700 transition-all duration-300">
+            <span class="flex-1 text-center ${task.completed ? 'task-completed' : ''} text-gray-700 transition-all duration-300">
                 ${task.text}
             </span>
+            <span class="text-xs font-bold text-gray-600 ml-3 min-w-[48px] text-right">${task.hora || ''}</span>
             <button 
                 onclick="removeTask('${periodo}', '${task.id}')" 
-                class="text-gray-400 hover:text-red-400 transition-colors duration-300 p-1 rounded hover:bg-white"
+                class="text-gray-400 hover:text-red-400 transition-colors duration-300 p-1 rounded hover:bg-white ml-2"
                 title="Remover tarefa"
             >
                 ✕
@@ -431,19 +399,22 @@ function renderTasksJV(periodo) {
         return;
     }
     container.innerHTML = tasks.map(task => `
-        <div class="flex items-center gap-3 p-3 bg-rosa-claro rounded-lg border border-lavanda transition-all duration-300 hover:shadow-md" data-task-jv-id="${task.id}">
+        <div class="flex items-center justify-between p-3 rounded-lg border border-lavanda transition-all duration-300 hover:shadow-md"
+             style="background-color: ${task.cor};"
+             data-task-jv-id="${task.id}">
             <input 
                 type="checkbox" 
                 ${task.completed ? 'checked' : ''} 
                 onchange="toggleTaskJV('${periodo}', '${task.id}')"
-                class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300"
+                class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300 mr-3"
             >
-            <span class="flex-1 ${task.completed ? 'task-completed' : ''} text-gray-700 transition-all duration-300">
+            <span class="flex-1 text-center ${task.completed ? 'task-completed' : ''} text-gray-700 transition-all duration-300">
                 ${task.text}
             </span>
+            <span class="text-xs font-bold text-gray-600 ml-3 min-w-[48px] text-right">${task.hora || ''}</span>
             <button 
                 onclick="removeTaskJV('${periodo}', '${task.id}')" 
-                class="text-gray-400 hover:text-red-400 transition-colors duration-300 p-1 rounded hover:bg-white"
+                class="text-gray-400 hover:text-red-400 transition-colors duration-300 p-1 rounded hover:bg-white ml-2"
                 title="Remover tarefa"
             >
                 ✕

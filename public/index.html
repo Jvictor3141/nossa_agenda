@@ -124,6 +124,11 @@
         #calendar-container {
         transition-property: max-height, opacity;
         }
+
+        input[type="radio"]:checked + label {
+            border-color: #ec4899 !important; /* rosa-vibrante */
+            box-shadow: 0 0 0 2px #ec489933;
+        }
     </style>
 </head>
 <body class="bg-rosa-bebe min-h-screen font-sans">
@@ -185,22 +190,39 @@
 
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 py-8">
+
+        <!-- Botão para Mostrar/Ocultar Calendário -->
+        <button id="toggle-calendar" class="flex items-center gap-2 text-rosa-vibrante font-medium focus:outline-none mb-2 bg-rosa-medio/15 hover:bg-rosa-medio/30 transition-colors rounded-lg px-3 py-2" aria-label="Mostrar ou ocultar calendário">
+            <span class="text-2xl">📅</span>
+            <span>Mostrar Calendário</span>
+        </button>
+        <div id="calendar-container" class="mb-6 overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+            <div id="fullcalendar" class="bg-white rounded-xl shadow-md border border-lavanda p-4"></div>
+        </div>
+
         <!-- Seção de Agenda -->
         <div id="agenda-section">
-
-            <!-- Calendário -->
-             <button id="toggle-calendar" class="flex items-center gap-2 text-rosa-vibrante font-medium focus:outline-none bg-rosa-medio/15 hover:bg-rosa-medio/40 transition-colors rounded-lg px-3 py-2 mb-2">
-                <span class="text-2xl">📅</span>
-                <span>Mostrar calendário</span>
-            </button>
-
-            <div id="calendar-container" class="mb-6 overflow-hidden transition-all duration-500 max-h-0 opacity-0">
-                <div id="fullcalendar" class="bg-white rounded-xl shadow-md border border-lavanda p-4"></div>
-            </div>
 
             <!-- Dia de Larissa -->
             <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
                 <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de Larissa</h3>
+
+                <!-- Adicionar Tarefa Unificada -->
+                <div class="flex flex-col md:flex-row gap-2 mb-4 justify-center items-center w-full">
+                    <input type="text" id="input-larissa" placeholder="Nova tarefa..." class="flex-1 max-w-xs px-3 py-2 border border-lavanda rounded-lg">
+                    <input type="time" id="input-hora-larissa" class="px-3 py-2 border border-lavanda rounded-lg cursor-pointer">
+                    <div class="flex gap-2">
+                        <input type="radio" name="cor-larissa" id="cor-larissa-rosa" value="#74aee8" class="hidden" checked>
+                        <label for="cor-larissa-rosa" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #74aee8;"></label>
+                        
+                        <input type="radio" name="cor-larissa" id="cor-larissa-vibrante" value="#ba82e8" class="hidden">
+                        <label for="cor-larissa-vibrante" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #ba82e8;"></label>
+                        
+                        <input type="radio" name="cor-larissa" id="cor-larissa-lavanda" value="#a6695a" class="hidden">
+                        <label for="cor-larissa-lavanda" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #a6695a;"></label>
+                    </div>
+                    <button onclick="addTaskUnificada('larissa')" class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante">+</button>
+                </div>
 
                 <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
                     
@@ -217,23 +239,6 @@
                         <div id="tasks-manha" class="space-y-3 mb-4 min-h-[200px]">
                             <!-- Tarefas da manhã serão inseridas aqui -->
                         </div>
-                        
-                        <div class="border-t border-lavanda pt-4">
-                            <div class="flex gap-2 w-full">
-                                <input 
-                                    type="text" 
-                                    id="input-manha" 
-                                    placeholder="Nova tarefa da manhã..."
-                                    class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
-                                >
-                                <button 
-                                    onclick="addTask('manha')"
-                                    class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
-                                >
-                                    +
-                                </button>
-                            </div>
-                        </div>
                     </section>
 
                     <!-- Tarde -->
@@ -248,23 +253,6 @@
                         
                         <div id="tasks-tarde" class="space-y-3 mb-4 min-h-[200px]">
                             <!-- Tarefas da tarde serão inseridas aqui -->
-                        </div>
-                        
-                        <div class="border-t border-lavanda pt-4">
-                            <div class="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    id="input-tarde" 
-                                    placeholder="Nova tarefa da tarde..."
-                                    class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
-                                >
-                                <button 
-                                    onclick="addTask('tarde')"
-                                    class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
-                                >
-                                    +
-                                </button>
-                            </div>
                         </div>
                     </section>
 
@@ -281,23 +269,6 @@
                         <div id="tasks-noite" class="space-y-3 mb-4 min-h-[200px]">
                             <!-- Tarefas da noite serão inseridas aqui -->
                         </div>
-                        
-                        <div class="border-t border-lavanda pt-4">
-                            <div class="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    id="input-noite" 
-                                    placeholder="Nova tarefa da noite..."
-                                    class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
-                                >
-                                <button 
-                                    onclick="addTask('noite')"
-                                    class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
-                                >
-                                    +
-                                </button>
-                            </div>
-                        </div>
                     </section>
                 </div>
             </div>
@@ -306,6 +277,23 @@
             <!-- Dia de João Victor -->
             <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
                 <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de João Victor</h3>
+
+                <!-- Adicionar Tarefa Unificada -->
+                <div class="flex flex-col md:flex-row gap-2 mb-4 justify-center items-center w-full">
+                    <input type="text" id="input-jv" placeholder="Nova tarefa..." class="flex-1 max-w-xs px-3 py-2 border border-lavanda rounded-lg">
+                    <input type="time" id="input-hora-jv" class="px-3 py-2 border border-lavanda rounded-lg cursor-pointer">
+                    <div class="flex gap-2">
+                        <input type="radio" name="cor-jv" id="cor-jv-rosa" value="#74aee8" class="hidden" checked>
+                        <label for="cor-jv-rosa" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #74aee8;"></label>
+                        
+                        <input type="radio" name="cor-jv" id="cor-jv-vibrante" value="#ba82e8" class="hidden">
+                        <label for="cor-jv-vibrante" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #ba82e8;"></label>
+                        
+                        <input type="radio" name="cor-jv" id="cor-jv-lavanda" value="#a6695a" class="hidden">
+                        <label for="cor-jv-lavanda" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #a6695a;"></label>
+                    </div>
+                    <button onclick="addTaskUnificada('joaovictor')" class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante">+</button>
+                </div>
 
                 <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
                     
@@ -322,23 +310,6 @@
                         <div id="tasks-jv-manha" class="space-y-3 mb-4 min-h-[200px]">
                             <!-- Tarefas da manhã serão inseridas aqui -->
                         </div>
-                        
-                        <div class="border-t border-lavanda pt-4">
-                            <div class="flex gap-2 w-full">
-                                <input 
-                                    type="text" 
-                                    id="input-jv-manha" 
-                                    placeholder="Nova tarefa da manhã..."
-                                    class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
-                                >
-                                <button 
-                                    onclick="addTaskJV('manha')"
-                                    class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
-                                >
-                                    +
-                                </button>
-                            </div>
-                        </div>
                     </section>
 
                     <!-- Tarde -->
@@ -354,23 +325,6 @@
                         <div id="tasks-jv-tarde" class="space-y-3 mb-4 min-h-[200px]">
                             <!-- Tarefas da tarde serão inseridas aqui -->
                         </div>
-                        
-                        <div class="border-t border-lavanda pt-4">
-                            <div class="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    id="input-jv-tarde" 
-                                    placeholder="Nova tarefa da tarde..."
-                                    class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
-                                >
-                                <button 
-                                    onclick="addTaskJV('tarde')"
-                                    class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
-                                >
-                                    +
-                                </button>
-                            </div>
-                        </div>
                     </section>
 
                     <!-- Noite -->
@@ -385,23 +339,6 @@
                         
                         <div id="tasks-jv-noite" class="space-y-3 mb-4 min-h-[200px]">
                             <!-- Tarefas da noite serão inseridas aqui -->
-                        </div>
-                        
-                        <div class="border-t border-lavanda pt-4">
-                            <div class="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    id="input-jv-noite" 
-                                    placeholder="Nova tarefa da noite..."
-                                    class="flex-1 min-w-0 px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio focus:border-transparent transition-all duration-300"
-                                >
-                                <button 
-                                    onclick="addTaskJV('noite')"
-                                    class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rosa-vibrante"
-                                >
-                                    +
-                                </button>
-                            </div>
                         </div>
                     </section>
                 </div>
