@@ -13,6 +13,9 @@ let agendaDataJV = {
     noite: []
 };
 
+//Calendario
+let selectedAgendaDate = new Date().toDateString();
+
 // Dias da semana em português
 const diasSemana = [
     'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 
@@ -67,8 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateFinancialSummary();
                 renderTransactions();
             }
-        );
-    }
+        );}
 
 // Listener para atualizações em tempo real da agenda
     if (window.firestoreOnSnapshot) {
@@ -85,8 +87,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateTaskCounts();
             }
         }
-    );
-}
+    );}
+
+    const agendaDateInput = document.getElementById('agenda-date');
+    if (agendaDateInput) {
+        // Inicializa o input com a data de hoje
+        agendaDateInput.valueAsDate = new Date();
+        agendaDateInput.addEventListener('change', function() {
+            // Atualiza a data selecionada
+            const date = new Date(this.value);
+            selectedAgendaDate = date.toDateString();
+            loadTasksFromFirebase();
+        });}
+
+    // Inicializar FullCalendar
+    const calendarEl = document.getElementById('fullcalendar');
+    if (calendarEl) {
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            height: 500,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: ''
+            },
+            events: async function(fetchInfo, successCallback, failureCallback) {
+                try {
+                    const agendasRef = window.firestoreCollection(window.db, "agendas");
+                    const snapshot = await window.firestoreGetDocs(agendasRef);
+                    const events = [];
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const date = docSnap.id; // id do doc é a data
+                        ['manha', 'tarde', 'noite'].forEach(periodo => {
+                            (data.larissa?.[periodo] || []).forEach(task => {
+                                events.push({
+                                    title: `Larissa: ${task.text}`,
+                                    start: new Date(date),
+                                    allDay: true
+                                });
+                            });
+                            (data.joaovictor?.[periodo] || []).forEach(task => {
+                                events.push({
+                                    title: `João Victor: ${task.text}`,
+                                    start: new Date(date),
+                                    allDay: true
+                                });
+                            });
+                        });
+                    });
+                    successCallback(events);
+                } catch (err) {
+                    failureCallback(err);
+                }
+            },
+            dateClick: function(info) {
+                // Atualiza o input de data ao clicar em um dia do calendário
+                const agendaDateInput = document.getElementById('agenda-date');
+                if (agendaDateInput) {
+                    agendaDateInput.value = info.dateStr;
+                    // Dispara o evento de change para carregar as tarefas desse dia
+                    agendaDateInput.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+        calendar.render();
+    }
 });
 
 // Event listeners para formulários de finanças
@@ -407,7 +474,7 @@ function addEntrada() {
     const pessoa = document.getElementById('pessoa-entrada').value;
     
     if (!valor || valor <= 0 || !descricao) {
-        alert('Por favor, preencha todos os campos corretamente.');
+        showToast('Por favor, preencha todos os campos corretamente.');
         return;
     }
     
@@ -438,7 +505,7 @@ function addGasto() {
     const tipo = document.getElementById('tipo-gasto').value;
     
     if (!valor || valor <= 0 || !descricao) {
-        alert('Por favor, preencha todos os campos corretamente.');
+        showToast('Por favor, preencha todos os campos corretamente.');
         return;
     }
     
@@ -610,10 +677,9 @@ function clearFinancialData() {
 
 // Salvar todas as tarefas (Larissa e João Victor) no Firestore
 async function saveTasksToFirebase() {
-    const today = new Date().toDateString();
     try {
         await window.firestoreSetDoc(
-            window.firestoreDoc(window.db, "agendas", today),
+            window.firestoreDoc(window.db, "agendas", selectedAgendaDate),
             {
                 larissa: agendaData,
                 joaovictor: agendaDataJV,
@@ -642,22 +708,21 @@ async function saveFinancialDataToFirebase() {
 
 // Carregar todas as tarefas do Firestore
 async function loadTasksFromFirebase() {
-    const today = new Date().toDateString();
     try {
         const docSnap = await window.firestoreGetDoc(
-            window.firestoreDoc(window.db, "agendas", today)
+            window.firestoreDoc(window.db, "agendas", selectedAgendaDate)
         );
         if (docSnap.exists()) {
             const data = docSnap.data();
             agendaData = data.larissa || { manha: [], tarde: [], noite: [] };
             agendaDataJV = data.joaovictor || { manha: [], tarde: [], noite: [] };
-            renderAllTasks();
-            renderAllTasksJV();
-            updateTaskCounts();
-            showToast('Tarefas carregadas da nuvem!');
         } else {
-            showToast('Nenhuma tarefa encontrada na nuvem para hoje.');
+            agendaData = { manha: [], tarde: [], noite: [] };
+            agendaDataJV = { manha: [], tarde: [], noite: [] };
         }
+        renderAllTasks();
+        renderAllTasksJV();
+        updateTaskCounts();
     } catch (error) {
         showToast('Erro ao carregar da nuvem!');
     }

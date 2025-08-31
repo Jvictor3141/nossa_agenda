@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nossa Vidinha Juntos</title>
     <link rel="icon" type="image/png" href="./favicon.png">
+    
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -149,6 +152,18 @@
     <main class="max-w-4xl mx-auto px-4 py-8">
         <!-- Seção de Agenda -->
         <div id="agenda-section">
+
+            <div class="mb-6">
+                <div id="fullcalendar"></div>
+            </div>
+
+            <div class="flex items-center gap-4 mb-4">
+            <label for="agenda-date" class="text-gray-700 font-medium">Escolha a data:</label>
+            <input 
+                type="date" 
+                id="agenda-date" 
+                class="px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+            </div>
             <!-- Dia de Larissa -->
             <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
                 <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de Larissa</h3>
@@ -555,6 +570,9 @@
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    window.firestoreCollection = collection;
+    window.firestoreGetDocs = getDocs;
 
     // Configuração do Firebase
     const firebaseConfig = {
@@ -578,6 +596,9 @@
     </script>
     <script src="./script.js"></script>
     <div id="toast" class="fixed bottom-6 right-6 bg-rosa-medio text-white px-4 py-2 rounded-lg shadow-lg opacity-0 pointer-events-none transition-all duration-500 z-50"></div>
+
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 </body>
 </html>
 
