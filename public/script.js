@@ -289,10 +289,6 @@ function addTaskUnificada(usuario) {
     const corRadios = document.querySelectorAll(`input[name="cor-${usuario === 'larissa' ? 'larissa' : 'jv'}"]`);
     if (corRadios.length) corRadios[0].checked = true;
 
-    if (calendarInstance) {
-    calendarInstance.refetchEvents();
-    }
-
     renderAllTasks();
     renderAllTasksJV();
     saveTasksToFirebase();
@@ -305,10 +301,6 @@ function removeTask(periodo, taskId) {
     renderTasks(periodo);
     updateTaskCounts();
     saveTasksToFirebase();
-
-    if (calendarInstance) {
-    calendarInstance.refetchEvents();
-    }
 }
 
 // Remover tarefa para João Victor
@@ -317,10 +309,6 @@ function removeTaskJV(periodo, taskId) {
     renderTasksJV(periodo);
     updateTaskCounts();
     saveTasksToFirebase();
-
-    if (calendarInstance) {
-    calendarInstance.refetchEvents();
-    }
 }
 
 // Alternar status da tarefa para Larissa
