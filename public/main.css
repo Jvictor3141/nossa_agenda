@@ -1,0 +1,234 @@
+.task-completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+    /* Menu Hambúrguer */
+.hamburger {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.hamburger:hover {
+    transform: scale(1.1);
+}
+
+/* Menu Lateral */
+.sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+/* Overlay */
+.overlay {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Seção de Finanças */
+.section-hidden {
+    display: none;
+}
+
+/* Animações de transação */
+.transaction-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* FullCalendar custom theme */
+.fc {
+    background: transparent;
+    font-family: inherit;
+}
+.fc-toolbar-title {
+    color: #ec4899; /* rosa-vibrante */
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+.fc-daygrid-day.fc-day-today {
+    background: #fce7f3 !important; /* rosa-claro */
+}
+.fc-button-primary {
+    background-color: #f9a8d4 !important; /* rosa-medio */
+    border: none !important;
+    color: #fff !important;
+    border-radius: 0.5rem !important;
+}
+.fc-button-primary:not(:disabled):hover {
+    background-color: #ec4899 !important; /* rosa-vibrante */
+}
+.fc-daygrid-event {
+    background: #f9a8d4 !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.95rem;
+    padding: 2px 6px;
+}
+
+#calendar-container {
+transition-property: max-height, opacity;
+}
+
+input[type="radio"]:checked + label {
+    border-color: #ec4899 !important; /* rosa-vibrante */
+    box-shadow: 0 0 0 2px #ec489933;
+}
+
+.fc-daygrid-day {
+    cursor: pointer;
+}
+
+.fc-daygrid-day:hover {
+    background: rgba(236, 72, 153, 0.20) !important; /* rosa-vibrante com 20% opacidade */
+    transition: background 0.2s;
+}
+
+.fc-daygrid-day.selected-day {
+    background: rgba(236, 72, 153, 0.20) !important; /* rosa-vibrante com 20% opacidade */
+    transition: background 0.2s;
+}
+
+.fc-daygrid-event {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+}
+
+/* Linha dos dias da semana no calendário */
+.fc-col-header-cell {
+    background: #f7bbdd !important; /* rosa-claro do tema */
+    color: #ec4899 !important;      /* texto rosa-vibrante */
+    font-weight: 600;
+    font-size: 1rem;
+    border: none !important;
+}
+
+/* Sábado (índice 6) e Domingo (índice 0) com opacidade 60% */
+.fc-col-header-cell.fc-day-sat,
+.fc-col-header-cell.fc-day-sun {
+    background: rgba(250, 193, 225, 0.6) !important; /* rosa-claro com 60% opacidade */
+    color: #ec4899 !important;
+}
+
+.fc-prev-button, .fc-next-button {
+    margin: 0 0.25rem !important; /* Espaço horizontal de 4px */
+}
+
+/* Remove espaço reservado para scrollbar no calendário */
+#calendar-container,
+#fullcalendar,
+.fc-scroller,
+.fc-daygrid-body,
+.fc-view-harness,
+.fc-view-harness-active {
+    overflow-y: visible !important;
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+    scrollbar-width: none !important; /* Firefox */
+}
+
+/* configuracoes de tema escuro */
+html.dark, body.dark {
+    background: #18181b !important;
+}
+html.dark .bg-white,
+body.dark .bg-white {
+    background: #23232a !important;
+    color: #f3e8ff !important;
+}
+html.dark .text-gray-800,
+body.dark .text-gray-800 {
+    color: #f3e8ff !important;
+}
+html.dark .text-gray-700,
+body.dark .text-gray-700 {
+    color: #e0e0e0 !important;
+}
+html.dark .border-lavanda {
+    border-color: #444466 !important;
+}
+html.dark .bg-rosa-medio {
+    background-color: #a21caf !important;
+}
+html.dark .bg-rosa-claro {
+    background-color: #6d28d9 !important;
+}
+html.dark .bg-gray-100 {
+    background-color: #23232a !important;
+}
+html.dark .bg-gray-50 {
+    background-color: #23232a !important;
+}
+html.dark .text-gray-600 {
+    color: #c7c7d1 !important;
+}
+html.dark .text-gray-400 {
+    color: #a1a1aa !important;
+}
+html.dark .shadow-md,
+body.dark .shadow-md {
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.5) !important;
+}
+#theme-toggle + span {
+    transition: opacity 0.2s;
+}
+html.dark main {
+    background: transparent !important;
+}
+html.dark .bg-white {
+    background: #23232a !important;
+    color: #f3e8ff !important;
+}
+html.dark .bg-white {
+    background: #23232a !important;
+    color: #f3e8ff !important;
+}
+html.dark input[type="time"] {
+    background: #18181b !important;
+    color: #f3e8ff !important;
+    border-color: #444466 !important;
+}
+html.dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+html.dark body.bg-rosa-bebe {
+    background: #000 !important;
+}
+html.dark .fc-daygrid-day.fc-day-today {
+    background: #fce7f3 !important; /* mantém o rosa claro */
+}
+html.dark .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    color: #18181b !important; /* preto para o número do dia */
+    font-weight: bold;
+}
