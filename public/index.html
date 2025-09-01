@@ -129,6 +129,62 @@
             border-color: #ec4899 !important; /* rosa-vibrante */
             box-shadow: 0 0 0 2px #ec489933;
         }
+
+        .fc-daygrid-day {
+            cursor: pointer;
+        }
+
+        .fc-daygrid-day:hover {
+            background: rgba(236, 72, 153, 0.20) !important; /* rosa-vibrante com 20% opacidade */
+            transition: background 0.2s;
+        }
+
+        .fc-daygrid-day.selected-day {
+            background: rgba(236, 72, 153, 0.20) !important; /* rosa-vibrante com 20% opacidade */
+            transition: background 0.2s;
+        }
+
+        .fc-daygrid-event {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+        }
+
+        /* Linha dos dias da semana no calendário */
+        .fc-col-header-cell {
+            background: #f7bbdd !important; /* rosa-claro do tema */
+            color: #ec4899 !important;      /* texto rosa-vibrante */
+            font-weight: 600;
+            font-size: 1rem;
+            border: none !important;
+        }
+
+        /* Sábado (índice 6) e Domingo (índice 0) com opacidade 60% */
+        .fc-col-header-cell.fc-day-sat,
+        .fc-col-header-cell.fc-day-sun {
+            background: rgba(250, 193, 225, 0.6) !important; /* rosa-claro com 60% opacidade */
+            color: #ec4899 !important;
+        }
+
+        .fc-prev-button, .fc-next-button {
+            margin: 0 0.25rem !important; /* Espaço horizontal de 4px */
+        }
+
+        /* Remove espaço reservado para scrollbar no calendário */
+        #calendar-container,
+        #fullcalendar,
+        .fc-scroller,
+        .fc-daygrid-body,
+        .fc-view-harness,
+        .fc-view-harness-active {
+            overflow-y: visible !important;
+            margin-right: 0 !important;
+            padding-right: 0 !important;
+            scrollbar-width: none !important; /* Firefox */
+        }
+ 
     </style>
 </head>
 <body class="bg-rosa-bebe min-h-screen font-sans">
@@ -139,11 +195,12 @@
             <div class="text-center">
                 <div class="flex bg-rosa-medio justify-between items-center px-4">
                     <!-- Menu Hambúrguer -->
-                    <div class="hamburger" onclick="toggleMenu()" aria-label="Abrir menu lateral" tabindex="0">
-                        <div class="w-6 h-6 flex flex-col justify-center items-center space-y-1">
-                            <span class="w-5 h-0.5 bg-rosa-vibrante rounded transition-all duration-300"></span>
-                            <span class="w-5 h-0.5 bg-rosa-vibrante rounded transition-all duration-300"></span>
-                            <span class="w-5 h-0.5 bg-rosa-vibrante rounded transition-all duration-300"></span>
+                    <div class="hamburger bg-rosa-vibrante hover:bg-rosa-medio shadow-lg rounded-full p-2 transition-all duration-300 cursor-pointer flex items-center justify-center"
+                    onclick="toggleMenu()" aria-label="Abrir menu lateral" tabindex="0">
+                        <div class="w-8 h-8 flex flex-col justify-center items-center space-y-1">
+                            <span class="w-7 h-1 bg-white rounded transition-all duration-300"></span>
+                            <span class="w-7 h-1 bg-white rounded transition-all duration-300"></span>
+                            <span class="w-7 h-1 bg-white rounded transition-all duration-300"></span>
                         </div>
                     </div>
                     <h1 id="page-title" class="w-full text-white text-4xl font-medium py-4 text-center">
@@ -161,10 +218,10 @@
 
     <!-- Menu Lateral -->
     <nav id="sidebar" class="sidebar fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 border-r border-lavanda">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-xl font-medium text-gray-800">Menu</h2>
-                <button onclick="closeMenu()" class="text-gray-500 hover:text-rosa-vibrante transition-colors">
+        <div class="p-0">
+            <div class="flex items-center justify-between mb-8 bg-rosa-medio px-4 py-6">
+                <h2 class="text-xl font-medium text-white">Menu</h2>
+                <button onclick="closeMenu()" class="text-white hover:text-rosa-vibrante transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>

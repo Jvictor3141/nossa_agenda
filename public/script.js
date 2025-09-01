@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     calendarInstance = new FullCalendar.Calendar(calendarEl, {
                         initialView: 'dayGridMonth',
                         locale: 'pt-br',
-                        height: 350,
+                        height: 500,
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
@@ -106,35 +106,78 @@ document.addEventListener('DOMContentLoaded', function() {
                                 snapshot.forEach(docSnap => {
                                     const data = docSnap.data();
                                     const date = docSnap.id;
+                                    let tarefas = [];
                                     ['manha', 'tarde', 'noite'].forEach(periodo => {
                                         (data.larissa?.[periodo] || []).forEach(task => {
-                                            events.push({
-                                                title: `Larissa: ${task.text}`,
-                                                start: new Date(date),
-                                                allDay: true
-                                            });
+                                            tarefas.push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: 'L' });
                                         });
                                         (data.joaovictor?.[periodo] || []).forEach(task => {
-                                            events.push({
-                                                title: `João Victor: ${task.text}`,
-                                                start: new Date(date),
-                                                allDay: true
-                                            });
+                                            tarefas.push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: 'JV' });
                                         });
                                     });
+                                    if (tarefas.length > 0) {
+                                        events.push({
+                                            title: '',
+                                            start: new Date(date),
+                                            allDay: true,
+                                            extendedProps: { tarefas }
+                                        });
+                                    }
                                 });
                                 successCallback(events);
                             } catch (err) {
                                 failureCallback(err);
                             }
                         },
+
+                        eventContent: function(arg) {
+                            const tarefas = arg.event.extendedProps.tarefas || [];
+                            let html = '<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;max-width:100%;">';
+                            tarefas.forEach((tarefa, i) => {
+                                if (i > 0 && i % 7 === 0) {
+                                    html += '<span style="flex-basis:100%;height:0"></span>';
+                                }
+                                html += `<span style="
+                                    display:inline-flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    width:18px;
+                                    height:18px;
+                                    border-radius:50%;
+                                    background:${tarefa.cor};
+                                    margin:1.5px;
+                                    opacity:${tarefa.status};
+                                    font-size:10px;
+                                    font-weight:bold;
+                                    color:#fff;
+                                    border:1.5px solid #fff;
+                                    box-sizing:border-box;
+                                    letter-spacing:1px;
+                                ">${tarefa.usuario}</span>`;
+                            });
+                            html += '</div>';
+                            return { html };
+                        },
+                        
                         dateClick: function(info) {
+                            // Remove seleção anterior
+                            document.querySelectorAll('.fc-daygrid-day.selected-day').forEach(el => {
+                                el.classList.remove('selected-day');
+                            });
+
+                            // Marca o novo dia clicado
+                            if (info.dayEl) {
+                                info.dayEl.classList.add('selected-day');
+                            }
+
+                            // Atualiza a agenda normalmente
                             const [year, month, day] = info.dateStr.split('-');
                             const clickedDate = new Date(Number(year), Number(month) - 1, Number(day));
                             selectedAgendaDate = clickedDate.toDateString();
                             loadTasksFromFirebase();
                             updateCurrentDate(clickedDate);
                         },
+
                         datesSet: function(info) {
                             const today = new Date();
                             const calendarMonth = info.view.currentStart.getMonth();
@@ -152,6 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                     calendarInstance.render();
+                    window.calendarInstance = calendarInstance;
                 }
             } else {
                 calendarContainer.classList.add('max-h-0', 'opacity-0');
@@ -293,6 +337,10 @@ function addTaskUnificada(usuario) {
     renderAllTasksJV();
     saveTasksToFirebase();
     updateTaskCounts();
+
+    if (window.calendarInstance) {
+        window.calendarInstance.refetchEvents();
+    }
 }
 
 // Remover tarefa para Larissa
@@ -301,6 +349,10 @@ function removeTask(periodo, taskId) {
     renderTasks(periodo);
     updateTaskCounts();
     saveTasksToFirebase();
+
+    if (window.calendarInstance) {
+        window.calendarInstance.refetchEvents();
+    }
 }
 
 // Remover tarefa para João Victor
@@ -309,6 +361,10 @@ function removeTaskJV(periodo, taskId) {
     renderTasksJV(periodo);
     updateTaskCounts();
     saveTasksToFirebase();
+
+    if (window.calendarInstance) {
+        window.calendarInstance.refetchEvents();
+    }
 }
 
 // Alternar status da tarefa para Larissa
@@ -319,6 +375,10 @@ function toggleTask(periodo, taskId) {
         renderTasks(periodo);
         updateTaskCounts();
         saveTasksToFirebase();
+
+        if (window.calendarInstance) {
+        window.calendarInstance.refetchEvents();
+    }
     }
 }
 
@@ -330,6 +390,10 @@ function toggleTaskJV(periodo, taskId) {
         renderTasksJV(periodo);
         updateTaskCounts();
         saveTasksToFirebase();
+
+        if (window.calendarInstance) {
+        window.calendarInstance.refetchEvents();
+    }
     }
 }
 
