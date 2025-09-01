@@ -184,7 +184,81 @@
             padding-right: 0 !important;
             scrollbar-width: none !important; /* Firefox */
         }
- 
+        
+        /* configuracoes de tema escuro */
+        html.dark, body.dark {
+            background: #18181b !important;
+        }
+        html.dark .bg-white,
+        body.dark .bg-white {
+            background: #23232a !important;
+            color: #f3e8ff !important;
+        }
+        html.dark .text-gray-800,
+        body.dark .text-gray-800 {
+            color: #f3e8ff !important;
+        }
+        html.dark .text-gray-700,
+        body.dark .text-gray-700 {
+            color: #e0e0e0 !important;
+        }
+        html.dark .border-lavanda {
+            border-color: #444466 !important;
+        }
+        html.dark .bg-rosa-medio {
+            background-color: #a21caf !important;
+        }
+        html.dark .bg-rosa-claro {
+            background-color: #6d28d9 !important;
+        }
+        html.dark .bg-gray-100 {
+            background-color: #23232a !important;
+        }
+        html.dark .bg-gray-50 {
+            background-color: #23232a !important;
+        }
+        html.dark .text-gray-600 {
+            color: #c7c7d1 !important;
+        }
+        html.dark .text-gray-400 {
+            color: #a1a1aa !important;
+        }
+        html.dark .shadow-md,
+        body.dark .shadow-md {
+            box-shadow: 0 2px 8px 0 rgba(0,0,0,0.5) !important;
+        }
+        #theme-toggle + span {
+            transition: opacity 0.2s;
+        }
+        html.dark main {
+            background: transparent !important;
+        }
+        html.dark .bg-white {
+            background: #23232a !important;
+            color: #f3e8ff !important;
+        }
+        html.dark .bg-white {
+            background: #23232a !important;
+            color: #f3e8ff !important;
+        }
+        html.dark input[type="time"] {
+            background: #18181b !important;
+            color: #f3e8ff !important;
+            border-color: #444466 !important;
+        }
+        html.dark input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+        html.dark body.bg-rosa-bebe {
+            background: #000 !important;
+        }
+        html.dark .fc-daygrid-day.fc-day-today {
+            background: #fce7f3 !important; /* mantém o rosa claro */
+        }
+        html.dark .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+            color: #18181b !important; /* preto para o número do dia */
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-rosa-bebe min-h-screen font-sans">
@@ -193,9 +267,9 @@
     <header class="bg-white shadow-sm border-b border-lavanda">
         <div class="w-full pb-6">
             <div class="text-center">
-                <div class="flex bg-rosa-medio justify-between items-center px-4">
+                <div class="flex bg-rosa-vibrante justify-between items-center px-4">
                     <!-- Menu Hambúrguer -->
-                    <div class="hamburger bg-rosa-vibrante hover:bg-rosa-medio shadow-lg rounded-full p-2 transition-all duration-300 cursor-pointer flex items-center justify-center"
+                    <div class="hamburger bg-rosa-medio hover:bg-rosa-vibrante shadow-lg rounded-full p-2 transition-all duration-300 cursor-pointer flex items-center justify-center"
                     onclick="toggleMenu()" aria-label="Abrir menu lateral" tabindex="0">
                         <div class="w-8 h-8 flex flex-col justify-center items-center space-y-1">
                             <span class="w-7 h-1 bg-white rounded transition-all duration-300"></span>
@@ -219,13 +293,22 @@
     <!-- Menu Lateral -->
     <nav id="sidebar" class="sidebar fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 border-r border-lavanda">
         <div class="p-0">
-            <div class="flex items-center justify-between mb-8 bg-rosa-medio px-4 py-6">
+            <div class="flex items-center justify-between mb-8 bg-rosa-vibrante px-4 py-6">
                 <h2 class="text-xl font-medium text-white">Menu</h2>
-                <button onclick="closeMenu()" class="text-white hover:text-rosa-vibrante transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+                <div class="flex items-center gap-3">
+                    <!-- Switch de tema compacto -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="theme-toggle" class="sr-only peer">
+                        <span class="text-xl absolute left-1 top-1 transition-all pointer-events-none peer-checked:opacity-0">🌞</span>
+                        <span class="text-xl absolute left-1 top-1 opacity-0 transition-all pointer-events-none peer-checked:opacity-100">🌙</span>
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"></div>
+                    </label>
+                    <button onclick="closeMenu()" class="text-white hover:text-rosa-vibrante transition-colors ml-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
             
             <ul class="space-y-4">
@@ -239,6 +322,12 @@
                     <button onclick="showSection('financas')" class="w-full flex items-center p-3 text-left rounded-lg hover:bg-rosa-claro transition-colors">
                         <span class="text-2xl mr-3">💰</span>
                         <span class="text-gray-700 font-medium">Finanças</span>
+                    </button>
+                </li>
+                <li>
+                    <button onclick="showSettings()" class="w-full flex items-center p-3 text-left rounded-lg hover:bg-rosa-claro transition-colors">
+                        <span class="text-2xl mr-3">⚙️</span>
+                        <span class="text-gray-700 font-medium">Configurações</span>
                     </button>
                 </li>
             </ul>
@@ -330,6 +419,7 @@
                 </div>
             </div>
 
+            <hr class="my-8 border-t-1 border-gray-400" style="opacity:0.4; width:calc(100% + 20px); margin-left:-10px; margin-right:-10px;">
 
             <!-- Dia de João Victor -->
             <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
@@ -595,6 +685,9 @@
             </div>
         </div>
     </main>
+    <footer class="w-full mt-12 py-6 bg-rosa-medio bg-opacity-80 text-center text-gray-100 text-sm">
+        © 2025 Nossa Vidinha Juntos. Todos os direitos reservados.
+    </footer>
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
@@ -627,6 +720,7 @@
 
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
 </body>
 </html>
 

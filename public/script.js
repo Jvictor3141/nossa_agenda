@@ -36,6 +36,25 @@ document.addEventListener('DOMContentLoaded', function() {
     renderAllTasksJV();
     updateTaskCounts();
 
+    //alternar temas da pag
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        // Carregar preferência do tema
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+            themeToggle.checked = true;
+        }
+        themeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+
     // Listener para atualizações em tempo real das finanças
     if (window.firestoreOnSnapshot) {
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -205,6 +224,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Função para mostrar configurações
+function showSettings() {
+    showToast('Configurações em breve!');
+}
 
 // Event listeners para formulários de finanças
 const formEntrada = document.getElementById('form-entrada');
