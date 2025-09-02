@@ -107,8 +107,58 @@
             <span class="text-2xl">📅</span>
             <span>Mostrar Calendário</span>
         </button>
-        <div id="calendar-container" class="mb-6 overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+        <div id="calendar-container" class="mb-6 overflow-hidden transition-all duration-500 max-h-0 opacity-0 relative">
             <div id="fullcalendar" class="bg-white rounded-xl shadow-md border border-lavanda p-4"></div>
+            <!-- Legenda de datas especiais -->
+            <div id="calendar-legend" class="mb-6 bg-white rounded-xl shadow-md border border-lavanda p-4 transition-all duration-500 max-h-40 opacity-100">
+                <h4 class="text-lg font-medium text-rosa-vibrante mb-2">Datas Especiais do Mês</h4>
+                <ul id="special-dates-list" class="text-gray-700 text-sm space-y-1">
+                    <!-- As datas especiais serão inseridas aqui via JS -->
+                </ul>
+            </div>
+            <!-- Modal para adicionar data especial -->
+            <div id="special-date-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full relative">
+                    <button onclick="closeSpecialDateModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-400 text-2xl">&times;</button>
+                    <h3 class="text-lg font-bold text-rosa-vibrante mb-4">Adicionar Data Especial</h3>
+                    <form id="special-date-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Nome</label>
+                            <input type="text" id="special-date-name" class="w-full px-3 py-2 border border-lavanda rounded-lg" placeholder="Ex: Aniversário, Namoro..." required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Data</label>
+                            <input type="date" id="special-date-date" class="w-full px-3 py-2 border border-lavanda rounded-lg" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Frequência</label>
+                            <select id="special-date-repeat" class="w-full px-3 py-2 border border-lavanda rounded-lg">
+                                <option value="anual">Anual</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="semanal">Semanal</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Hora (opcional)</label>
+                            <input type="time" id="special-date-time" class="w-full px-3 py-2 border border-lavanda rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Cor</label>
+                            <input type="color" id="special-date-color" class="w-10 h-10 p-0 border-2 border-lavanda rounded-full cursor-pointer" value="#ec4899">
+                        </div>
+                        <button type="submit" class="w-full bg-rosa-vibrante text-white py-2 rounded-lg hover:bg-rosa-medio transition-colors font-medium">
+                            Salvar
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <!-- Botão para adicionar datas especiais -->
+            <button id="add-special-date-btn"
+                class="mt-4 flex items-center gap-2 bg-rosa-vibrante text-white rounded-full px-4 py-2 shadow-lg hover:bg-rosa-medio transition-all"
+                style="z-index:10;">
+                <span class="text-lg">+</span>
+                <span class="text-sm font-medium">Adicionar data especial</span>
+            </button>
         </div>
 
         <!-- Seção de Agenda -->

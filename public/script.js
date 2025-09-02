@@ -35,6 +35,22 @@ document.addEventListener('DOMContentLoaded', function() {
     renderAllTasks();
     renderAllTasksJV();
     updateTaskCounts();
+    loadSpecialDatesFromFirebase();
+
+    // Listener para atualizações em tempo real das datas especiais
+    if (window.firestoreOnSnapshot) {
+        window.firestoreOnSnapshot(
+            window.firestoreDoc(window.db, "datasEspeciais", "lista"),
+            (docSnap) => {
+                let lista = [];
+                if (docSnap.exists()) {
+                    lista = docSnap.data().datas || [];
+                }
+                window.specialDatesList = lista;
+                renderSpecialDatesList(lista);
+            }
+        );
+    }
 
     //alternar temas da pag
     const themeToggle = document.getElementById('theme-toggle');
@@ -91,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // FULLCALENDAR - Inicialização ao clicar no botão
     const toggleCalendarBtn = document.getElementById('toggle-calendar');
     const calendarContainer = document.getElementById('calendar-container');
+    const legend = document.getElementById('calendar-legend');
     let calendarVisible = false;
     let calendarInstance = null;
 
@@ -101,7 +118,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 calendarContainer.classList.add('max-h-full', 'opacity-100');
                 calendarContainer.classList.remove('max-h-0', 'opacity-0');
                 toggleCalendarBtn.querySelector('span:last-child').textContent = 'Ocultar calendário';
-
+                // Mostrar a legenda
+                if (legend) {
+                legend.classList.add('max-h-40', 'opacity-100');
+                legend.classList.remove('max-h-0', 'opacity-0');
+                }
                 // Só inicializa o calendário na primeira vez
                 if (!calendarInstance) {
                     const calendarEl = document.getElementById('fullcalendar');
@@ -122,6 +143,17 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const agendasRef = window.firestoreCollection(window.db, "agendas");
                                 const snapshot = await window.firestoreGetDocs(agendasRef);
                                 const events = [];
+                                const specialDates = window.specialDatesList || [];
+                                specialDates.forEach(item => {
+                                    events.push({
+                                        title: item.nome,
+                                        start: item.data + (item.hora ? 'T' + item.hora : ''),
+                                        allDay: !item.hora,
+                                        backgroundColor: item.cor || '#ec4899',
+                                        borderColor: item.cor || '#ec4899',
+                                        extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
+                                    });
+                                });
                                 snapshot.forEach(docSnap => {
                                     const data = docSnap.data();
                                     const date = docSnap.id;
@@ -150,6 +182,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
 
                         eventContent: function(arg) {
+                            if (arg.event.extendedProps.isSpecial) {
+                                const cor = arg.event.extendedProps.cor || '#ec4899';
+                                return {
+                                    html: `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${cor};margin:1.5px;border:1.5px solid #fff;"></span>`
+                                };
+                            }
                             const tarefas = arg.event.extendedProps.tarefas || [];
                             let html = '<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;max-width:100%;">';
                             tarefas.forEach((tarefa, i) => {
@@ -215,11 +253,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     calendarInstance.render();
                     window.calendarInstance = calendarInstance;
+                    setTimeout(() => {
+                        if (window.calendarInstance) {
+                            window.calendarInstance.refetchEvents();
+                        }
+                    }, 100);
                 }
             } else {
                 calendarContainer.classList.add('max-h-0', 'opacity-0');
                 calendarContainer.classList.remove('max-h-full', 'opacity-100');
                 toggleCalendarBtn.querySelector('span:last-child').textContent = 'Mostrar calendário';
+                // Esconder a legenda
+                if (legend) {
+                legend.classList.add('max-h-0', 'opacity-0');
+                legend.classList.remove('max-h-40', 'opacity-100');
+                }
             }
         });
     }
@@ -832,5 +880,122 @@ async function loadFinancialDataFromFirebase() {
         showToast('Finanças carregadas da nuvem!');
     } catch (error) {
         showToast('Erro ao carregar finanças da nuvem!');
+    }
+}
+
+// Abrir modal
+document.getElementById('add-special-date-btn').onclick = function() {
+    document.getElementById('special-date-modal').classList.remove('hidden');
+};
+// Fechar modal
+function closeSpecialDateModal() {
+    document.getElementById('special-date-modal').classList.add('hidden');
+}
+// Fechar ao clicar fora do card
+document.getElementById('special-date-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeSpecialDateModal();
+});
+
+async function saveSpecialDateToFirebase(specialDate) {
+    try {
+        const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
+        // Carrega as datas já salvas
+        const docSnap = await window.firestoreGetDoc(docRef);
+        let lista = [];
+        if (docSnap.exists()) {
+            lista = docSnap.data().datas || [];
+        }
+        // Adiciona a nova data
+        lista.push(specialDate);
+        await window.firestoreSetDoc(docRef, { datas: lista });
+        showToast('Data especial salva!');
+        loadSpecialDatesFromFirebase(); // Atualiza a lista na tela
+    } catch (error) {
+        showToast('Erro ao salvar data especial!');
+    }
+}
+
+async function loadSpecialDatesFromFirebase() {
+    try {
+        const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
+        const docSnap = await window.firestoreGetDoc(docRef);
+        let lista = [];
+        if (docSnap.exists()) {
+            lista = docSnap.data().datas || [];
+        }
+        window.specialDatesList = lista; // Salva globalmente para uso futuro
+        renderSpecialDatesList(lista);
+    } catch (error) {
+        showToast('Erro ao carregar datas especiais!');
+    }
+}
+
+function renderSpecialDatesList(lista) {
+    const ul = document.getElementById('special-dates-list');
+    if (!ul) return;
+    if (!lista || lista.length === 0) {
+        ul.innerHTML = `<li class="text-gray-400">Nenhuma data especial cadastrada.</li>`;
+        return;
+    }
+    ul.innerHTML = lista.map((item, idx) =>
+        `<li class="flex items-center gap-2 group">
+            <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${item.cor || '#ec4899'};"></span>
+            <span class="font-bold">${item.data}${item.hora ? ' ' + item.hora : ''}</span> - ${item.nome} 
+            <span class="text-xs text-gray-500">(${item.frequencia})</span>
+            <button onclick="removeSpecialDate(${idx})" title="Remover" class="ml-2 text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">
+                ×
+            </button>
+        </li>`
+    ).join('');
+}
+const specialDateForm = document.getElementById('special-date-form');
+if (specialDateForm) {
+    specialDateForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nome = document.getElementById('special-date-name').value.trim();
+        const data = document.getElementById('special-date-date').value;
+        const frequencia = document.getElementById('special-date-repeat').value;
+        const hora = document.getElementById('special-date-time').value;
+        const cor = document.getElementById('special-date-color').value;
+        if (!nome || !data) {
+            showToast('Preencha todos os campos!');
+            return;
+        }
+        saveSpecialDateToFirebase({ nome, data, frequencia, hora, cor });
+        closeSpecialDateModal();
+        specialDateForm.reset();
+    });
+}
+
+if (window.firestoreOnSnapshot) {
+    window.firestoreOnSnapshot(
+        window.firestoreDoc(window.db, "datasEspeciais", "lista"),
+        (docSnap) => {
+            let lista = [];
+            if (docSnap.exists()) {
+                lista = docSnap.data().datas || [];
+            }
+            window.specialDatesList = lista;
+            renderSpecialDatesList(lista);
+            // Atualiza o calendário em tempo real
+            if (window.calendarInstance) {
+                window.calendarInstance.refetchEvents();
+            }
+        }
+    );
+}
+
+async function removeSpecialDate(idx) {
+    if (!window.specialDatesList) return;
+    if (!confirm('Tem certeza que deseja remover esta data especial?')) return;
+    const lista = [...window.specialDatesList];
+    lista.splice(idx, 1);
+    try {
+        const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
+        await window.firestoreSetDoc(docRef, { datas: lista });
+        showToast('Data especial removida!');
+        // O listener do Firestore atualizará a lista e o calendário em tempo real
+    } catch (error) {
+        showToast('Erro ao remover data especial!');
     }
 }
