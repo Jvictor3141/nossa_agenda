@@ -232,3 +232,24 @@ html.dark .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
     color: #18181b !important; /* preto para o número do dia */
     font-weight: bold;
 }
+
+/* Corrige cor do texto dos inputs do modal */
+#special-date-modal input,
+#special-date-modal select {
+    color: #18181b;
+}
+
+html.dark #special-date-modal input,
+html.dark #special-date-modal select {
+    color: #f3e8ff !important;
+    background: #23232a !important;
+    border-color: #444466 !important;
+}
+#special-date-modal input::placeholder {
+    color: #a1a1aa;
+    opacity: 1;
+}
+html.dark #special-date-modal input::placeholder {
+    color: #c7c7d1;
+    opacity: 1;
+}

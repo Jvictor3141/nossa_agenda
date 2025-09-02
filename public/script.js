@@ -285,6 +285,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         
                         dateClick: function(info) {
+                            // Preenche o modal com a data selecionada e desabilita campos
+                            document.getElementById('special-date-date').value = info.dateStr;
+                            document.getElementById('special-date-date').disabled = true;
+                            document.getElementById('edit-special-date-date').checked = false;
+                            document.getElementById('special-date-repeat').disabled = true;
+                            document.getElementById('edit-special-date-repeat').checked = false;
+                            document.getElementById('special-date-time').disabled = true;
+                            document.getElementById('edit-special-date-time').checked = false;
+
+                            //oculta ao abrir e salvar os campos
+                            document.getElementById('special-date-repeat-wrapper').classList.add('hidden');
+                            document.getElementById('special-date-time-wrapper').classList.add('hidden');
+
                             // Remove seleção anterior
                             document.querySelectorAll('.fc-daygrid-day.selected-day').forEach(el => {
                                 el.classList.remove('selected-day');
@@ -958,10 +971,6 @@ async function loadFinancialDataFromFirebase() {
     }
 }
 
-// Abrir modal
-document.getElementById('add-special-date-btn').onclick = function() {
-    document.getElementById('special-date-modal').classList.remove('hidden');
-};
 // Fechar modal
 function closeSpecialDateModal() {
     document.getElementById('special-date-modal').classList.add('hidden');
@@ -1028,10 +1037,22 @@ if (specialDateForm) {
     specialDateForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const nome = document.getElementById('special-date-name').value.trim();
-        const data = document.getElementById('special-date-date').value;
-        const frequencia = document.getElementById('special-date-repeat').value;
-        const hora = document.getElementById('special-date-time').value;
+        let data = document.getElementById('special-date-date').value;
+        let frequencia = document.getElementById('special-date-repeat').value;
+        let hora = document.getElementById('special-date-time').value;
         const cor = document.getElementById('special-date-color').value;
+
+        // Só salva se o campo estiver habilitado, senão usa padrão
+        if (!document.getElementById('edit-special-date-date').checked) {
+            data = document.getElementById('special-date-date').value; // já está preenchido com a data clicada
+        }
+        if (!document.getElementById('edit-special-date-repeat').checked) {
+            frequencia = '';
+        }
+        if (!document.getElementById('edit-special-date-time').checked) {
+            hora = '';
+        }
+
         if (!nome || !data) {
             showToast('Preencha todos os campos!');
             return;
@@ -1039,6 +1060,13 @@ if (specialDateForm) {
         saveSpecialDateToFirebase({ nome, data, frequencia, hora, cor });
         closeSpecialDateModal();
         specialDateForm.reset();
+        // Desabilita novamente os campos após salvar
+        document.getElementById('special-date-date').disabled = true;
+        document.getElementById('special-date-repeat').disabled = true;
+        document.getElementById('special-date-time').disabled = true;
+        document.getElementById('edit-special-date-date').checked = false;
+        document.getElementById('edit-special-date-repeat').checked = false;
+        document.getElementById('edit-special-date-time').checked = false;
     });
 }
 
@@ -1109,3 +1137,36 @@ function renderDayEventsInModal(dateStr) {
     }
     container.innerHTML = html;
 }
+
+// Habilitar/desabilitar campos do modal de datas especiais
+document.getElementById('edit-special-date-date').addEventListener('change', function() {
+    document.getElementById('special-date-date').disabled = !this.checked;
+});
+document.getElementById('edit-special-date-repeat').addEventListener('change', function() {
+    document.getElementById('special-date-repeat').disabled = !this.checked;
+});
+document.getElementById('edit-special-date-time').addEventListener('change', function() {
+    document.getElementById('special-date-time').disabled = !this.checked;
+});
+
+// Toggle campo de frequência
+document.getElementById('edit-special-date-repeat').addEventListener('change', function() {
+    const wrapper = document.getElementById('special-date-repeat-wrapper');
+    if (this.checked) {
+        wrapper.classList.remove('hidden');
+    } else {
+        wrapper.classList.add('hidden');
+        document.getElementById('special-date-repeat').value = 'anual';
+    }
+});
+
+// Toggle campo de hora
+document.getElementById('edit-special-date-time').addEventListener('change', function() {
+    const wrapper = document.getElementById('special-date-time-wrapper');
+    if (this.checked) {
+        wrapper.classList.remove('hidden');
+    } else {
+        wrapper.classList.add('hidden');
+        document.getElementById('special-date-time').value = '';
+    }
+});

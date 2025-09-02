@@ -123,24 +123,37 @@
                     <h3 class="text-lg font-bold text-rosa-vibrante mb-4">Adicionar Data Especial</h3>
                     <form id="special-date-form" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium mb-1">Nome</label>
+                            <label class="block text-sm font-medium mb-1">Eventos</label>
                             <input type="text" id="special-date-name" class="w-full px-3 py-2 border border-lavanda rounded-lg" placeholder="Ex: Aniversário, Namoro..." required>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1">Data</label>
-                            <input type="date" id="special-date-date" class="w-full px-3 py-2 border border-lavanda rounded-lg" required>
+                            <label class="block text-sm font-medium mb-1 flex items-center gap-2">
+                                Data
+                                <input type="checkbox" id="edit-special-date-date" class="ml-2">
+                            </label>
+                            <input type="date" id="special-date-date" class="w-full px-3 py-2 border border-lavanda rounded-lg" disabled>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1">Frequência</label>
-                            <select id="special-date-repeat" class="w-full px-3 py-2 border border-lavanda rounded-lg">
-                                <option value="anual">Anual</option>
-                                <option value="mensal">Mensal</option>
-                                <option value="semanal">Semanal</option>
-                            </select>
+                            <label class="block text-sm font-medium mb-1 flex items-center gap-2">
+                                Frequência
+                                <input type="checkbox" id="edit-special-date-repeat" class="ml-2">
+                            </label>
+                            <div id="special-date-repeat-wrapper" class="hidden">
+                                <select id="special-date-repeat" class="w-full px-3 py-2 border border-lavanda rounded-lg">
+                                    <option value="anual">Anual</option>
+                                    <option value="mensal">Mensal</option>
+                                    <option value="semanal">Semanal</option>
+                                </select>
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1">Hora (opcional)</label>
-                            <input type="time" id="special-date-time" class="w-26 px-3 py-2 border border-lavanda rounded-lg">
+                            <label class="block text-sm font-medium mb-1 flex items-center gap-2">
+                                Hora (opcional)
+                                <input type="checkbox" id="edit-special-date-time" class="ml-2">
+                            </label>
+                            <div id="special-date-time-wrapper" class="hidden">
+                                <input type="time" id="special-date-time" class="w-26 px-3 py-2 border border-lavanda rounded-lg">
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">Cor</label>
@@ -149,11 +162,10 @@
                         <button type="submit" class="w-full bg-rosa-vibrante text-white py-2 rounded-lg hover:bg-rosa-medio transition-colors font-medium">
                             Salvar
                         </button>
-
-                        <div id="modal-day-events" class="mt-6">
-                            <!-- Tarefas e eventos do dia serão exibidos aqui via JS -->
-                        </div>
                     </form>
+                    <div id="modal-day-events" class="mt-6">
+                            <!-- Tarefas e eventos do dia serão exibidos aqui via JS -->
+                    </div>
                 </div>
             </div>
         </div>
