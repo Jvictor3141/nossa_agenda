@@ -48,6 +48,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 window.specialDatesList = lista;
                 renderSpecialDatesList(lista);
+                // Atualiza o calendário em tempo real
+                if (window.calendarInstance) {
+                    window.calendarInstance.refetchEvents();
+                }
             }
         );
     }
@@ -144,15 +148,79 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const snapshot = await window.firestoreGetDocs(agendasRef);
                                 const events = [];
                                 const specialDates = window.specialDatesList || [];
+                                const calendarStart = fetchInfo.start;
+                                const calendarEnd = fetchInfo.end;
+
                                 specialDates.forEach(item => {
-                                    events.push({
-                                        title: item.nome,
-                                        start: item.data + (item.hora ? 'T' + item.hora : ''),
-                                        allDay: !item.hora,
-                                        backgroundColor: item.cor || '#ec4899',
-                                        borderColor: item.cor || '#ec4899',
-                                        extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
-                                    });
+                                    if (!item.data) return;
+                                    const [year, month, day] = item.data.split('-').map(Number);
+                                    let current = new Date(calendarStart);
+                                    let end = new Date(calendarEnd);
+
+                                    // Frequência anual
+                                    if (item.frequencia === 'anual') {
+                                        for (let y = current.getFullYear(); y <= end.getFullYear(); y++) {
+                                            const eventDate = new Date(y, month - 1, day);
+                                            if (eventDate >= current && eventDate <= end) {
+                                                events.push({
+                                                    title: item.nome,
+                                                    start: eventDate.toISOString().slice(0, 10) + (item.hora ? 'T' + item.hora : ''),
+                                                    allDay: !item.hora,
+                                                    backgroundColor: item.cor || '#ec4899',
+                                                    borderColor: item.cor || '#ec4899',
+                                                    extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
+                                                });
+                                            }
+                                        }
+                                    }
+                                    // Frequência mensal
+                                    else if (item.frequencia === 'mensal') {
+                                        let d = new Date(current.getFullYear(), current.getMonth(), day);
+                                        while (d <= end) {
+                                            if (d >= current) {
+                                                events.push({
+                                                    title: item.nome,
+                                                    start: d.toISOString().slice(0, 10) + (item.hora ? 'T' + item.hora : ''),
+                                                    allDay: !item.hora,
+                                                    backgroundColor: item.cor || '#ec4899',
+                                                    borderColor: item.cor || '#ec4899',
+                                                    extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
+                                                });
+                                            }
+                                            d.setMonth(d.getMonth() + 1);
+                                        }
+                                    }
+                                    // Frequência semanal
+                                    else if (item.frequencia === 'semanal') {
+                                        const original = new Date(year, month - 1, day);
+                                        let d = new Date(current);
+                                        // Ajusta para o primeiro dia igual ao original
+                                        d.setDate(d.getDate() + ((7 + original.getDay() - d.getDay()) % 7));
+                                        while (d <= end) {
+                                            if (d >= current) {
+                                                events.push({
+                                                    title: item.nome,
+                                                    start: d.toISOString().slice(0, 10) + (item.hora ? 'T' + item.hora : ''),
+                                                    allDay: !item.hora,
+                                                    backgroundColor: item.cor || '#ec4899',
+                                                    borderColor: item.cor || '#ec4899',
+                                                    extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
+                                                });
+                                            }
+                                            d.setDate(d.getDate() + 7);
+                                        }
+                                    }
+                                    // Frequência única (default)
+                                    else {
+                                        events.push({
+                                            title: item.nome,
+                                            start: item.data + (item.hora ? 'T' + item.hora : ''),
+                                            allDay: !item.hora,
+                                            backgroundColor: item.cor || '#ec4899',
+                                            borderColor: item.cor || '#ec4899',
+                                            extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
+                                        });
+                                    }
                                 });
                                 snapshot.forEach(docSnap => {
                                     const data = docSnap.data();
@@ -233,6 +301,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             selectedAgendaDate = clickedDate.toDateString();
                             loadTasksFromFirebase();
                             updateCurrentDate(clickedDate);
+
+                            // Preenche o modal com a data selecionada
+                            document.getElementById('special-date-date').value = info.dateStr;
+                            document.getElementById('special-date-modal').classList.remove('hidden');
+
+                            // Exibe tarefas e eventos do dia no modal
+                            renderDayEventsInModal(info.dateStr);
                         },
 
                         datesSet: function(info) {
@@ -940,7 +1015,7 @@ function renderSpecialDatesList(lista) {
     ul.innerHTML = lista.map((item, idx) =>
         `<li class="flex items-center gap-2 group">
             <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${item.cor || '#ec4899'};"></span>
-            <span class="font-bold">${item.data}${item.hora ? ' ' + item.hora : ''}</span> - ${item.nome} 
+            <span class="font-bold">${item.nome}</span> - ${item.data}${item.hora ? ' ' + item.hora : ''} 
             <span class="text-xs text-gray-500">(${item.frequencia})</span>
             <button onclick="removeSpecialDate(${idx})" title="Remover" class="ml-2 text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">
                 ×
@@ -967,24 +1042,6 @@ if (specialDateForm) {
     });
 }
 
-if (window.firestoreOnSnapshot) {
-    window.firestoreOnSnapshot(
-        window.firestoreDoc(window.db, "datasEspeciais", "lista"),
-        (docSnap) => {
-            let lista = [];
-            if (docSnap.exists()) {
-                lista = docSnap.data().datas || [];
-            }
-            window.specialDatesList = lista;
-            renderSpecialDatesList(lista);
-            // Atualiza o calendário em tempo real
-            if (window.calendarInstance) {
-                window.calendarInstance.refetchEvents();
-            }
-        }
-    );
-}
-
 async function removeSpecialDate(idx) {
     if (!window.specialDatesList) return;
     if (!confirm('Tem certeza que deseja remover esta data especial?')) return;
@@ -998,4 +1055,57 @@ async function removeSpecialDate(idx) {
     } catch (error) {
         showToast('Erro ao remover data especial!');
     }
+}
+
+//exibir tarefas e eventos do dia
+function renderDayEventsInModal(dateStr) {
+    const container = document.getElementById('modal-day-events');
+    if (!container) return;
+
+    // Datas especiais
+    const specialDates = (window.specialDatesList || []).filter(item => item.data === dateStr);
+    // Tarefas da agenda
+    let agendaHtml = '';
+    let agendaJVHtml = '';
+
+    // Busca tarefas para Larissa
+    ['manha', 'tarde', 'noite'].forEach(periodo => {
+        const tasks = agendaData[periodo].filter(task => task.hora && dateStr === new Date(selectedAgendaDate).toISOString().slice(0,10));
+        if (tasks.length) {
+            agendaHtml += `<div class="mb-2"><span class="font-bold">${periodo.charAt(0).toUpperCase() + periodo.slice(1)}:</span> `;
+            agendaHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded bg-[${task.cor}] text-xs mr-1">${task.text} (${task.hora})</span>`).join('');
+            agendaHtml += `</div>`;
+        }
+    });
+    // Busca tarefas para João Victor
+    ['manha', 'tarde', 'noite'].forEach(periodo => {
+        const tasks = agendaDataJV[periodo].filter(task => task.hora && dateStr === new Date(selectedAgendaDate).toISOString().slice(0,10));
+        if (tasks.length) {
+            agendaJVHtml += `<div class="mb-2"><span class="font-bold">${periodo.charAt(0).toUpperCase() + periodo.slice(1)} (JV):</span> `;
+            agendaJVHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded bg-[${task.cor}] text-xs mr-1">${task.text} (${task.hora})</span>`).join('');
+            agendaJVHtml += `</div>`;
+        }
+    });
+
+    let html = '';
+    if (specialDates.length) {
+        html += `<div class="mb-2"><span class="font-bold text-rosa-vibrante">Datas Especiais:</span><ul>`;
+        html += specialDates.map(item =>
+            `<li class="flex items-center gap-2">
+                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${item.cor || '#ec4899'};"></span>
+                <span>${item.nome}${item.hora ? ' (' + item.hora + ')' : ''} <span class="text-xs text-gray-500">(${item.frequencia})</span></span>
+            </li>`
+        ).join('');
+        html += `</ul></div>`;
+    }
+    if (agendaHtml) {
+        html += `<div class="mb-2"><span class="font-bold text-rosa-vibrante">Tarefas Larissa:</span>${agendaHtml}</div>`;
+    }
+    if (agendaJVHtml) {
+        html += `<div class="mb-2"><span class="font-bold text-rosa-vibrante">Tarefas João Victor:</span>${agendaJVHtml}</div>`;
+    }
+    if (!html) {
+        html = `<div class="text-gray-400">Nenhuma tarefa ou evento para este dia.</div>`;
+    }
+    container.innerHTML = html;
 }
