@@ -124,8 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 toggleCalendarBtn.querySelector('span:last-child').textContent = 'Ocultar calendário';
                 // Mostrar a legenda
                 if (legend) {
-                legend.classList.add('max-h-40', 'opacity-100');
-                legend.classList.remove('max-h-0', 'opacity-0');
+                legend.classList.add('opacity-100');
+                legend.classList.remove('opacity-0');
                 }
                 // Só inicializa o calendário na primeira vez
                 if (!calendarInstance) {
@@ -151,6 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const calendarStart = fetchInfo.start;
                                 const calendarEnd = fetchInfo.end;
 
+                                // 1. Monte um Set com todas as datas especiais (YYYY-MM-DD)
+                                const specialDatesSet = new Set();
                                 specialDates.forEach(item => {
                                     if (!item.data) return;
                                     const [year, month, day] = item.data.split('-').map(Number);
@@ -162,14 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         for (let y = current.getFullYear(); y <= end.getFullYear(); y++) {
                                             const eventDate = new Date(y, month - 1, day);
                                             if (eventDate >= current && eventDate <= end) {
-                                                events.push({
-                                                    title: item.nome,
-                                                    start: eventDate.toISOString().slice(0, 10) + (item.hora ? 'T' + item.hora : ''),
-                                                    allDay: !item.hora,
-                                                    backgroundColor: item.cor || '#ec4899',
-                                                    borderColor: item.cor || '#ec4899',
-                                                    extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
-                                                });
+                                                specialDatesSet.add(eventDate.toISOString().slice(0, 10));
                                             }
                                         }
                                     }
@@ -178,14 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         let d = new Date(current.getFullYear(), current.getMonth(), day);
                                         while (d <= end) {
                                             if (d >= current) {
-                                                events.push({
-                                                    title: item.nome,
-                                                    start: d.toISOString().slice(0, 10) + (item.hora ? 'T' + item.hora : ''),
-                                                    allDay: !item.hora,
-                                                    backgroundColor: item.cor || '#ec4899',
-                                                    borderColor: item.cor || '#ec4899',
-                                                    extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
-                                                });
+                                                specialDatesSet.add(d.toISOString().slice(0, 10));
                                             }
                                             d.setMonth(d.getMonth() + 1);
                                         }
@@ -194,34 +182,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                     else if (item.frequencia === 'semanal') {
                                         const original = new Date(year, month - 1, day);
                                         let d = new Date(current);
-                                        // Ajusta para o primeiro dia igual ao original
                                         d.setDate(d.getDate() + ((7 + original.getDay() - d.getDay()) % 7));
                                         while (d <= end) {
                                             if (d >= current) {
-                                                events.push({
-                                                    title: item.nome,
-                                                    start: d.toISOString().slice(0, 10) + (item.hora ? 'T' + item.hora : ''),
-                                                    allDay: !item.hora,
-                                                    backgroundColor: item.cor || '#ec4899',
-                                                    borderColor: item.cor || '#ec4899',
-                                                    extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
-                                                });
+                                                specialDatesSet.add(d.toISOString().slice(0, 10));
                                             }
                                             d.setDate(d.getDate() + 7);
                                         }
                                     }
                                     // Frequência única (default)
                                     else {
-                                        events.push({
-                                            title: item.nome,
-                                            start: item.data + (item.hora ? 'T' + item.hora : ''),
-                                            allDay: !item.hora,
-                                            backgroundColor: item.cor || '#ec4899',
-                                            borderColor: item.cor || '#ec4899',
-                                            extendedProps: { cor: item.cor || '#ec4899', usuario: '', status: 1, isSpecial: true }
-                                        });
+                                        specialDatesSet.add(item.data);
                                     }
                                 });
+
+                                // 2. Monte um mapa de tarefas por data
+                                const tarefasPorData = {};
                                 snapshot.forEach(docSnap => {
                                     const data = docSnap.data();
                                     const date = docSnap.id;
@@ -234,15 +210,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                             tarefas.push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: 'JV' });
                                         });
                                     });
-                                    if (tarefas.length > 0) {
-                                        events.push({
-                                            title: '',
-                                            start: new Date(date),
-                                            allDay: true,
-                                            extendedProps: { tarefas }
-                                        });
-                                    }
+                                    const dateStr = new Date(date).toISOString().slice(0,10);
+                                    tarefasPorData[dateStr] = tarefas;
                                 });
+
+                                // 3. Para cada data do mês, crie UM evento se houver tarefas ou data especial
+                                const allDatesSet = new Set([
+                                    ...Object.keys(tarefasPorData),
+                                    ...specialDatesSet
+                                ]);
+                                allDatesSet.forEach(dateStr => {
+                                    events.push({
+                                        title: '',
+                                        start: dateStr,
+                                        allDay: true,
+                                        extendedProps: {
+                                            tarefas: tarefasPorData[dateStr] || [],
+                                            hasSpecial: specialDatesSet.has(dateStr)
+                                        }
+                                    });
+                                });
+
                                 successCallback(events);
                             } catch (err) {
                                 failureCallback(err);
@@ -250,54 +238,109 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
 
                         eventContent: function(arg) {
-                            if (arg.event.extendedProps.isSpecial) {
-                                const cor = arg.event.extendedProps.cor || '#ec4899';
-                                return {
-                                    html: `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${cor};margin:1.5px;border:1.5px solid #fff;"></span>`
-                                };
-                            }
                             const tarefas = arg.event.extendedProps.tarefas || [];
-                            let html = '<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;max-width:100%;">';
-                            tarefas.forEach((tarefa, i) => {
-                                if (i > 0 && i % 7 === 0) {
-                                    html += '<span style="flex-basis:100%;height:0"></span>';
-                                }
-                                html += `<span style="
-                                    display:inline-flex;
+                            const hasSpecial = arg.event.extendedProps.hasSpecial;
+
+                            // Detecta se está em tela pequena (celular)
+                            const isMobile = window.innerWidth <= 600;
+
+                            // Quantidade máxima de bolinhas visíveis
+                            const maxVisible = isMobile ? 1 : 3;
+
+                            let html = `
+                                <div style="
+                                    width:100%;
+                                    height:100%;
+                                    box-sizing:border-box;
+                                    display:flex;
+                                    flex-direction:column;
                                     align-items:center;
                                     justify-content:center;
-                                    width:18px;
-                                    height:18px;
-                                    border-radius:50%;
-                                    background:${tarefa.cor};
-                                    margin:1.5px;
-                                    opacity:${tarefa.status};
-                                    font-size:10px;
-                                    font-weight:bold;
-                                    color:#fff;
-                                    border:1.5px solid #fff;
-                                    box-sizing:border-box;
-                                    letter-spacing:1px;
-                                ">${tarefa.usuario}</span>`;
-                            });
+                                    gap:4px;
+                                    padding:2px;
+                                    max-width:100%;
+                                    max-height:100%;
+                                    overflow:hidden;
+                                ">
+                            `;
+
+                            // Tarefas (máximo maxVisible, alinhadas na horizontal, com gap)
+                            if (tarefas.length > 0) {
+                                html += `
+                                    <div style="
+                                        display:flex;
+                                        justify-content:center;
+                                        align-items:center;
+                                        flex-wrap:nowrap;
+                                        gap:2px;
+                                        margin-top:2px;
+                                    ">
+                                `;
+                                tarefas.slice(0, maxVisible).forEach((tarefa, i) => {
+                                    html += `<span style="
+                                        display:inline-flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        width:18px;
+                                        height:18px;
+                                        border-radius:50%;
+                                        background:${tarefa.cor};
+                                        opacity:${tarefa.status};
+                                        font-size:10px;
+                                        font-weight:bold;
+                                        color:#fff;
+                                        border:1.5px solid #fff;
+                                        box-sizing:border-box;
+                                        letter-spacing:1px;
+                                    ">${tarefa.usuario}</span>`;
+                                });
+                                if (tarefas.length > maxVisible) {
+                                    const ocultas = tarefas.length - maxVisible;
+                                    html += `<span style="
+                                        display:inline-flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        width:18px;
+                                        height:18px;
+                                        border-radius:50%;
+                                        background:transparent;
+                                        margin:1.5px;
+                                        font-size:13px;
+                                        font-weight:900;
+                                        color:#ec4899;
+                                        border:2px solid #ec4899;
+                                        box-sizing:border-box;
+                                        letter-spacing:-1px;
+                                        gap:0;
+                                    "><span style="display:inline-block;font-weight:900;">+</span><span style="display:inline-block;font-weight:900;margin-left:-2px;">${ocultas}</span></span>`;
+                                }
+                                html += '</div>';
+                            }
+
+                            // Estrela (abaixo das tarefas, com espaçamento)
+                            if (hasSpecial) {
+                                html += `
+                                    <div style="margin-top:4px;">
+                                        <span style="
+                                            display:inline-flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            width:20px;
+                                            height:20px;
+                                        ">
+                                            <svg width="18" height="18" viewBox="0 0 20 20" fill="#ec4899" xmlns="http://www.w3.org/2000/svg">
+                                                <polygon points="10,2 12.59,7.26 18.18,7.27 13.64,11.14 15.23,16.63 10,13.77 4.77,16.63 6.36,11.14 1.82,7.27 7.41,7.26"/>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                `;
+                            }
+
                             html += '</div>';
                             return { html };
                         },
                         
-                        dateClick: function(info) {
-                            // Preenche o modal com a data selecionada e desabilita campos
-                            document.getElementById('special-date-date').value = info.dateStr;
-                            document.getElementById('special-date-date').disabled = true;
-                            document.getElementById('edit-special-date-date').checked = false;
-                            document.getElementById('special-date-repeat').disabled = true;
-                            document.getElementById('edit-special-date-repeat').checked = false;
-                            document.getElementById('special-date-time').disabled = true;
-                            document.getElementById('edit-special-date-time').checked = false;
-
-                            //oculta ao abrir e salvar os campos
-                            document.getElementById('special-date-repeat-wrapper').classList.add('hidden');
-                            document.getElementById('special-date-time-wrapper').classList.add('hidden');
-
+                        dateClick: async function(info) {
                             // Remove seleção anterior
                             document.querySelectorAll('.fc-daygrid-day.selected-day').forEach(el => {
                                 el.classList.remove('selected-day');
@@ -312,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const [year, month, day] = info.dateStr.split('-');
                             const clickedDate = new Date(Number(year), Number(month) - 1, Number(day));
                             selectedAgendaDate = clickedDate.toDateString();
-                            loadTasksFromFirebase();
+                            await loadTasksFromFirebase(); // Aguarda carregar as tarefas!
                             updateCurrentDate(clickedDate);
 
                             // Preenche o modal com a data selecionada
@@ -353,8 +396,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 toggleCalendarBtn.querySelector('span:last-child').textContent = 'Mostrar calendário';
                 // Esconder a legenda
                 if (legend) {
-                legend.classList.add('max-h-0', 'opacity-0');
-                legend.classList.remove('max-h-40', 'opacity-100');
+                legend.classList.add('opacity-0');
+                legend.classList.remove('opacity-100');
                 }
             }
         });
@@ -1022,11 +1065,13 @@ function renderSpecialDatesList(lista) {
         return;
     }
     ul.innerHTML = lista.map((item, idx) =>
-        `<li class="flex items-center gap-2 group">
-            <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${item.cor || '#ec4899'};"></span>
-            <span class="font-bold">${item.nome}</span> - ${item.data}${item.hora ? ' ' + item.hora : ''} 
-            <span class="text-xs text-gray-500">(${item.frequencia})</span>
-            <button onclick="removeSpecialDate(${idx})" title="Remover" class="ml-2 text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">
+        `<li class="flex items-center justify-between gap-2 group">
+            <div class="flex items-center gap-2">
+                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${item.cor || '#ec4899'};"></span>
+                <span class="font-bold">${item.nome}</span> - ${item.data}${item.hora ? ' ' + item.hora : ''} 
+                ${item.frequencia ? `<span class="text-xs text-gray-500">(${item.frequencia})</span>` : ''}
+            </div>
+            <button onclick="removeSpecialDate(${idx})" title="Remover" class="text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">
                 ×
             </button>
         </li>`
@@ -1040,7 +1085,6 @@ if (specialDateForm) {
         let data = document.getElementById('special-date-date').value;
         let frequencia = document.getElementById('special-date-repeat').value;
         let hora = document.getElementById('special-date-time').value;
-        const cor = document.getElementById('special-date-color').value;
 
         // Só salva se o campo estiver habilitado, senão usa padrão
         if (!document.getElementById('edit-special-date-date').checked) {
@@ -1057,7 +1101,7 @@ if (specialDateForm) {
             showToast('Preencha todos os campos!');
             return;
         }
-        saveSpecialDateToFirebase({ nome, data, frequencia, hora, cor });
+        saveSpecialDateToFirebase({ nome, data, frequencia, hora });
         closeSpecialDateModal();
         specialDateForm.reset();
         // Desabilita novamente os campos após salvar
@@ -1098,7 +1142,7 @@ function renderDayEventsInModal(dateStr) {
 
     // Busca tarefas para Larissa
     ['manha', 'tarde', 'noite'].forEach(periodo => {
-        const tasks = agendaData[periodo].filter(task => task.hora && dateStr === new Date(selectedAgendaDate).toISOString().slice(0,10));
+        const tasks = agendaData[periodo].filter(task => task.hora);
         if (tasks.length) {
             agendaHtml += `<div class="mb-2"><span class="font-bold">${periodo.charAt(0).toUpperCase() + periodo.slice(1)}:</span> `;
             agendaHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded bg-[${task.cor}] text-xs mr-1">${task.text} (${task.hora})</span>`).join('');
@@ -1107,7 +1151,7 @@ function renderDayEventsInModal(dateStr) {
     });
     // Busca tarefas para João Victor
     ['manha', 'tarde', 'noite'].forEach(periodo => {
-        const tasks = agendaDataJV[periodo].filter(task => task.hora && dateStr === new Date(selectedAgendaDate).toISOString().slice(0,10));
+        const tasks = agendaDataJV[periodo].filter(task => task.hora);
         if (tasks.length) {
             agendaJVHtml += `<div class="mb-2"><span class="font-bold">${periodo.charAt(0).toUpperCase() + periodo.slice(1)} (JV):</span> `;
             agendaJVHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded bg-[${task.cor}] text-xs mr-1">${task.text} (${task.hora})</span>`).join('');

@@ -98,6 +98,47 @@
 transition-property: max-height, opacity;
 }
 
+/* Garante que o conteúdo dos eventos ocupe toda a célula e respeite o padding */
+.fc-daygrid-event .fc-event-main {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.fc-daygrid-event {
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+/* Limita o conteúdo do evento ao tamanho da célula */
+.fc-daygrid-event {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Garante que o conteúdo do evento fique centralizado e com padding interno */
+.fc-daygrid-event .fc-event-main {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2px !important;
+    box-sizing: border-box !important;
+    gap: 4px !important;
+}
+
 input[type="radio"]:checked + label {
     border-color: #ec4899 !important; /* rosa-vibrante */
     box-shadow: 0 0 0 2px #ec489933;
