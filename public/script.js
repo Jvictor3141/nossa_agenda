@@ -6,6 +6,8 @@ let agendaData = {
     noite: []
 };
 
+let pendingRemoveIdx = null;
+
 // Dados da agenda para João Victor
 let agendaDataJV = {
     manha: [],
@@ -29,6 +31,103 @@ const meses = [
 
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', function() {
+    //alerta de duplicidade
+    const specialDateNameInput = document.getElementById('special-date-name');
+    const specialDateDateInput = document.getElementById('special-date-date');
+    const specialDateRepeatInput = document.getElementById('special-date-repeat');
+    const specialDateTimeInput = document.getElementById('special-date-time');
+    const specialDateAlert = document.getElementById('special-date-alert');
+    const specialDateForm = document.getElementById('special-date-form');
+    const editRepeat = document.getElementById('edit-special-date-repeat');
+    const editTime = document.getElementById('edit-special-date-time');
+
+    function checkDuplicateSpecialDate() {
+        if (!window.specialDatesList) return false;
+        const nome = specialDateNameInput.value.trim();
+        const data = specialDateDateInput.value;
+        const frequencia = editRepeat && editRepeat.checked ? specialDateRepeatInput.value : '';
+        const hora = editTime && editTime.checked ? specialDateTimeInput.value : '';
+
+        const exists = window.specialDatesList.some(item =>
+            item.nome.trim().toLowerCase() === nome.toLowerCase() &&
+            item.data === data &&
+            (item.frequencia || '') === frequencia &&
+            (item.hora || '') === hora
+        );
+
+        if (nome && data && exists) {
+            specialDateAlert.textContent = 'Já existe uma data especial idêntica cadastrada!';
+            specialDateAlert.classList.remove('hidden');
+            return true;
+        } else {
+            specialDateAlert.textContent = '';
+            specialDateAlert.classList.add('hidden');
+            return false;
+        }
+    }
+
+    // Escute mudanças nos campos relevantes
+    [
+        specialDateNameInput,
+        specialDateDateInput,
+        specialDateRepeatInput,
+        specialDateTimeInput,
+        editRepeat,
+        editTime
+    ].forEach(function(el) {
+        if (el) {
+            el.addEventListener('input', checkDuplicateSpecialDate);
+            el.addEventListener('change', checkDuplicateSpecialDate);
+        }
+    });
+
+    // No submit, bloqueie se houver duplicidade
+    if (specialDateForm) {
+        specialDateForm.addEventListener('submit', function(e) {
+            if (checkDuplicateSpecialDate()) {
+                e.preventDefault();
+                showToast('Já existe uma data especial idêntica!');
+                return;
+            }
+            e.preventDefault();
+            const nome = document.getElementById('special-date-name').value.trim();
+            let data = document.getElementById('special-date-date').value;
+            let frequencia = document.getElementById('special-date-repeat').value;
+            let hora = document.getElementById('special-date-time').value;
+
+            // Só salva se o campo estiver habilitado, senão usa padrão
+            if (!document.getElementById('edit-special-date-date').checked) {
+                data = document.getElementById('special-date-date').value; // já está preenchido com a data clicada
+            }
+            if (!document.getElementById('edit-special-date-repeat').checked) {
+                frequencia = '';
+            }
+            if (!document.getElementById('edit-special-date-time').checked) {
+                hora = '';
+            }
+
+            if (!nome || !data) {
+                showToast('Preencha todos os campos!');
+                return;
+            }
+            saveSpecialDateToFirebase({ nome, data, frequencia, hora });
+            closeSpecialDateModal();
+            specialDateForm.reset();
+            // Desabilita novamente os campos após salvar
+            document.getElementById('special-date-date').disabled = true;
+            document.getElementById('special-date-repeat').disabled = true;
+            document.getElementById('special-date-time').disabled = true;
+            document.getElementById('edit-special-date-date').checked = false;
+            document.getElementById('edit-special-date-repeat').checked = false;
+            document.getElementById('edit-special-date-time').checked = false;
+            document.getElementById('special-date-repeat-wrapper').classList.add('hidden');
+            document.getElementById('special-date-time-wrapper').classList.add('hidden');
+        });
+    }
+
+    document.getElementById('cancel-remove-btn').addEventListener('click', hideRemoveSpecialDateModal);
+    document.getElementById('confirm-remove-btn').addEventListener('click', confirmRemoveSpecialDate);
+
     updateCurrentDate();
     loadTasksFromFirebase();
     loadFinancialDataFromFirebase();
@@ -380,6 +479,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                     updateCurrentDate(today);
                                 }
                             }
+                            // Atualiza a legenda do mês exibido
+                            renderSpecialDatesLegendForMonth(calendarYear, calendarMonth);
                         }
                     });
                     calendarInstance.render();
@@ -1055,6 +1156,14 @@ async function loadSpecialDatesFromFirebase() {
     } catch (error) {
         showToast('Erro ao carregar datas especiais!');
     }
+
+    // Após carregar as datas especiais, atualize a legenda do mês exibido
+    if (window.calendarInstance) {
+        const view = window.calendarInstance.view;
+        const year = view.currentStart.getFullYear();
+        const month = view.currentStart.getMonth();
+        renderSpecialDatesLegendForMonth(year, month);
+    }
 }
 
 function renderSpecialDatesList(lista) {
@@ -1071,62 +1180,53 @@ function renderSpecialDatesList(lista) {
                 <span class="font-bold">${item.nome}</span> - ${item.data}${item.hora ? ' ' + item.hora : ''} 
                 ${item.frequencia ? `<span class="text-xs text-gray-500">(${item.frequencia})</span>` : ''}
             </div>
-            <button onclick="removeSpecialDate(${idx})" title="Remover" class="text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">
+            <button onclick="showRemoveSpecialDateModal(${idx})" ...>×</button>
+        </li>`
+    ).join('');
+}
+
+async function removeSpecialDate(idx) {
+    let pendingRemoveIdx = null;
+
+    function showRemoveSpecialDateModal(idx) {
+        pendingRemoveIdx = idx;
+        document.getElementById('confirm-remove-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('cancel-remove-btn').addEventListener('click', function() {
+        document.getElementById('confirm-remove-modal').classList.add('hidden');
+        pendingRemoveIdx = null;
+    });
+
+    document.getElementById('confirm-remove-btn').addEventListener('click', async function() {
+        if (pendingRemoveIdx === null || !window.specialDatesList) return;
+        const lista = [...window.specialDatesList];
+        lista.splice(pendingRemoveIdx, 1);
+        try {
+            const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
+            await window.firestoreSetDoc(docRef, { datas: lista });
+            showToast('Data especial removida!');
+            // O listener do Firestore atualizará a lista e o calendário em tempo real
+        } catch (error) {
+            showToast('Erro ao remover data especial!');
+        }
+        document.getElementById('confirm-remove-modal').classList.add('hidden');
+        pendingRemoveIdx = null;
+    });
+
+    // Troque no renderSpecialDatesList o onclick do botão X:
+    ul.innerHTML = lista.map((item, idx) =>
+        `<li class="flex items-center justify-between gap-2 group">
+            <div class="flex items-center gap-2">
+                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${item.cor || '#ec4899'};"></span>
+                <span class="font-bold">${item.nome}</span> - ${item.data}${item.hora ? ' ' + item.hora : ''} 
+                ${item.frequencia ? `<span class="text-xs text-gray-500">(${item.frequencia})</span>` : ''}
+            </div>
+            <button onclick="showRemoveSpecialDateModal(${idx})" title="Remover" class="text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">
                 ×
             </button>
         </li>`
     ).join('');
-}
-const specialDateForm = document.getElementById('special-date-form');
-if (specialDateForm) {
-    specialDateForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const nome = document.getElementById('special-date-name').value.trim();
-        let data = document.getElementById('special-date-date').value;
-        let frequencia = document.getElementById('special-date-repeat').value;
-        let hora = document.getElementById('special-date-time').value;
-
-        // Só salva se o campo estiver habilitado, senão usa padrão
-        if (!document.getElementById('edit-special-date-date').checked) {
-            data = document.getElementById('special-date-date').value; // já está preenchido com a data clicada
-        }
-        if (!document.getElementById('edit-special-date-repeat').checked) {
-            frequencia = '';
-        }
-        if (!document.getElementById('edit-special-date-time').checked) {
-            hora = '';
-        }
-
-        if (!nome || !data) {
-            showToast('Preencha todos os campos!');
-            return;
-        }
-        saveSpecialDateToFirebase({ nome, data, frequencia, hora });
-        closeSpecialDateModal();
-        specialDateForm.reset();
-        // Desabilita novamente os campos após salvar
-        document.getElementById('special-date-date').disabled = true;
-        document.getElementById('special-date-repeat').disabled = true;
-        document.getElementById('special-date-time').disabled = true;
-        document.getElementById('edit-special-date-date').checked = false;
-        document.getElementById('edit-special-date-repeat').checked = false;
-        document.getElementById('edit-special-date-time').checked = false;
-    });
-}
-
-async function removeSpecialDate(idx) {
-    if (!window.specialDatesList) return;
-    if (!confirm('Tem certeza que deseja remover esta data especial?')) return;
-    const lista = [...window.specialDatesList];
-    lista.splice(idx, 1);
-    try {
-        const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
-        await window.firestoreSetDoc(docRef, { datas: lista });
-        showToast('Data especial removida!');
-        // O listener do Firestore atualizará a lista e o calendário em tempo real
-    } catch (error) {
-        showToast('Erro ao remover data especial!');
-    }
 }
 
 //exibir tarefas e eventos do dia
@@ -1214,3 +1314,58 @@ document.getElementById('edit-special-date-time').addEventListener('change', fun
         document.getElementById('special-date-time').value = '';
     }
 });
+
+function renderSpecialDatesLegendForMonth(year, month) {
+    // month: 0-11 (igual ao JS Date)
+    const lista = window.specialDatesList || [];
+    // Filtra datas especiais do mês/ano exibido
+    const legendList = lista.filter(item => {
+        if (!item.data) return false;
+        const [itemYear, itemMonth] = item.data.split('-').map(Number);
+        // Se for recorrente, mostra se o mês bate
+        if (item.frequencia === 'anual') {
+            return Number(itemMonth) === (month + 1);
+        }
+        if (item.frequencia === 'mensal') {
+            return true; // Mensal aparece todo mês
+        }
+        if (item.frequencia === 'semanal') {
+            return true; // Semanal aparece todo mês
+        }
+        // Data única: compara ano e mês
+        return Number(itemYear) === year && Number(itemMonth) === (month + 1);
+    });
+    renderSpecialDatesList(legendList);
+}
+
+function showRemoveSpecialDateModal(idx) {
+    pendingRemoveIdx = idx;
+    document.getElementById('confirm-remove-modal').classList.remove('hidden');
+}
+
+function hideRemoveSpecialDateModal() {
+    document.getElementById('confirm-remove-modal').classList.add('hidden');
+    pendingRemoveIdx = null;
+}
+
+async function confirmRemoveSpecialDate() {
+    if (pendingRemoveIdx === null || !window.specialDatesList) return;
+    // Pega o evento a ser removido
+    const eventoRemover = window.specialDatesList[pendingRemoveIdx];
+    // Remove todas as instâncias que tenham o mesmo nome, data e frequência
+    const lista = window.specialDatesList.filter(item =>
+        !(item.nome === eventoRemover.nome &&
+          item.data === eventoRemover.data &&
+          item.frequencia === eventoRemover.frequencia &&
+          item.hora === eventoRemover.hora)
+    );
+    try {
+        const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
+        await window.firestoreSetDoc(docRef, { datas: lista });
+        showToast('Data especial removida!');
+        // O listener do Firestore atualizará a lista e o calendário em tempo real
+    } catch (error) {
+        showToast('Erro ao remover data especial!');
+    }
+    hideRemoveSpecialDateModal();
+}
