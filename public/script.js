@@ -136,6 +136,34 @@ document.addEventListener('DOMContentLoaded', function() {
     updateTaskCounts();
     loadSpecialDatesFromFirebase();
 
+    // Avançado Larissa
+    const avancadoLarissa = document.getElementById('avancado-larissa');
+    const freqLarissa = document.getElementById('frequencia-larissa');
+        if (avancadoLarissa && freqLarissa) {
+            avancadoLarissa.addEventListener('change', function() {
+                if (this.checked) {
+                    freqLarissa.classList.remove('hidden');
+                } else {
+                    freqLarissa.classList.add('hidden');
+                    freqLarissa.value = '';
+                }
+            });
+        }
+
+    // Avançado João Victor
+    const avancadoJV = document.getElementById('avancado-jv');
+    const freqJV = document.getElementById('frequencia-jv');
+        if (avancadoJV && freqJV) {
+            avancadoJV.addEventListener('change', function() {
+                if (this.checked) {
+                    freqJV.classList.remove('hidden');
+                } else {
+                    freqJV.classList.add('hidden');
+                    freqJV.value = '';
+                }
+            });
+        }
+
     // Listener para atualizações em tempo real das datas especiais
     if (window.firestoreOnSnapshot) {
         window.firestoreOnSnapshot(
@@ -295,22 +323,81 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                 });
 
-                                // 2. Monte um mapa de tarefas por data
+                                // 2. Monte um mapa de tarefas por data, considerando frequência
                                 const tarefasPorData = {};
+
+                                // Função auxiliar para adicionar tarefa em datas recorrentes
+                                function addTaskRecorrente(task, startDate, endDate) {
+                                const startRecorrencia = new Date(task.createdAt);
+                                let taskDate = new Date(startDate);
+                                let end = new Date(endDate);
+
+                                taskDate = new Date(startRecorrencia); // Sempre começa no dia de criação
+
+                                if (task.frequencia === 'diario') {
+                                    while (taskDate <= end) {
+                                        const dateStr = taskDate.toISOString().slice(0,10);
+                                        if (!tarefasPorData[dateStr]) tarefasPorData[dateStr] = [];
+                                        const isCompleted = Array.isArray(task.completedDates) && task.completedDates.includes(dateStr);
+                                        tarefasPorData[dateStr].push({ cor: task.cor, status: isCompleted ? 0.4 : 1, usuario: task.usuario || '' });
+                                        taskDate.setDate(taskDate.getDate() + 1);
+                                    }
+                                } else if (task.frequencia === 'semanal') {
+                                    const originalDay = startRecorrencia.getDay();
+                                    while (taskDate <= end) {
+                                        if (taskDate.getDay() === originalDay) {
+                                            const dateStr = taskDate.toISOString().slice(0,10);
+                                            if (!tarefasPorData[dateStr]) tarefasPorData[dateStr] = [];
+                                            const isCompleted = Array.isArray(task.completedDates) && task.completedDates.includes(dateStr);
+                                        tarefasPorData[dateStr].push({ cor: task.cor, status: isCompleted ? 0.4 : 1, usuario: task.usuario || '' });
+                                        }
+                                        taskDate.setDate(taskDate.getDate() + 1);
+                                    }
+                                } else if (task.frequencia === 'mensal') {
+                                    const originalDay = startRecorrencia.getDate();
+                                    while (taskDate <= end) {
+                                        if (taskDate.getDate() === originalDay) {
+                                            const dateStr = taskDate.toISOString().slice(0,10);
+                                            if (!tarefasPorData[dateStr]) tarefasPorData[dateStr] = [];
+                                            const isCompleted = Array.isArray(task.completedDates) && task.completedDates.includes(dateStr);
+                                        tarefasPorData[dateStr].push({ cor: task.cor, status: isCompleted ? 0.4 : 1, usuario: task.usuario || '' });
+                                        }
+                                        taskDate.setDate(taskDate.getDate() + 1);
+                                    }
+                                } else {
+                                    // Tarefa normal (não recorrente)
+                                    const dateStr = startRecorrencia.toISOString().slice(0,10);
+                                    if (!tarefasPorData[dateStr]) tarefasPorData[dateStr] = [];
+                                    tarefasPorData[dateStr].push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: task.usuario || '' });
+                                }
+                            }
+
+                                // Para cada agenda, verifica tarefas e adiciona recorrentes
                                 snapshot.forEach(docSnap => {
                                     const data = docSnap.data();
                                     const date = docSnap.id;
-                                    let tarefas = [];
                                     ['manha', 'tarde', 'noite'].forEach(periodo => {
                                         (data.larissa?.[periodo] || []).forEach(task => {
-                                            tarefas.push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: 'L' });
+                                            task.usuario = 'L';
+                                            if (task.frequencia) {
+                                                addTaskRecorrente(task, fetchInfo.start, fetchInfo.end);
+                                            } else {
+                                                const dateStr = new Date(date).toISOString().slice(0,10);
+                                                if (!tarefasPorData[dateStr]) tarefasPorData[dateStr] = [];
+                                                tarefasPorData[dateStr].push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: 'L' });
+                                            }
                                         });
                                         (data.joaovictor?.[periodo] || []).forEach(task => {
-                                            tarefas.push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: 'JV' });
+                                            task.usuario = 'JV';
+                                            if (task.frequencia) {
+                                                addTaskRecorrente(task, fetchInfo.start, fetchInfo.end);
+                                            } else {
+                                                const dateStr = new Date(date).toISOString().slice(0,10);
+                                                if (!tarefasPorData[dateStr]) tarefasPorData[dateStr] = [];
+                                                tarefasPorData[dateStr].push({ cor: task.cor, status: task.completed ? 0.4 : 1, usuario: 'JV' });
+                                            }
                                         });
                                     });
-                                    const dateStr = new Date(date).toISOString().slice(0,10);
-                                    tarefasPorData[dateStr] = tarefas;
                                 });
 
                                 // 3. Para cada data do mês, crie UM evento se houver tarefas ou data especial
@@ -615,6 +702,16 @@ function addTaskUnificada(usuario) {
         return;
     }
 
+    // salva frequência se avançado estiver marcado
+    let frequencia = '';
+    if (usuario === 'larissa') {
+        const freqInput = document.getElementById('frequencia-larissa');
+        frequencia = freqInput && !freqInput.classList.contains('hidden') ? freqInput.value : '';
+    } else {
+        const freqInput = document.getElementById('frequencia-jv');
+        frequencia = freqInput && !freqInput.classList.contains('hidden') ? freqInput.value : '';
+    }
+
     const periodo = getPeriodoByHora(hora);
     const newTask = {
         id: generateId(),
@@ -622,7 +719,9 @@ function addTaskUnificada(usuario) {
         hora: hora,
         cor: cor,
         completed: false,
-        createdAt: new Date().toISOString()
+        completedDates: [],
+        createdAt: new Date().toISOString(),
+        frequencia: frequencia
     };
 
     if (usuario === 'larissa') {
@@ -675,14 +774,26 @@ function removeTaskJV(periodo, taskId) {
 function toggleTask(periodo, taskId) {
     const task = agendaData[periodo].find(task => task.id === taskId);
     if (task) {
-        task.completed = !task.completed;
+        const todayStr = new Date(selectedAgendaDate).toISOString().slice(0,10);
+        if (task.frequencia) {
+            // Tarefa recorrente: marca/desmarca apenas o dia atual
+            if (!task.completedDates) task.completedDates = [];
+            if (task.completedDates.includes(todayStr)) {
+                task.completedDates = task.completedDates.filter(d => d !== todayStr);
+            } else {
+                task.completedDates.push(todayStr);
+            }
+        } else {
+            // Tarefa normal
+            task.completed = !task.completed;
+        }
         renderTasks(periodo);
         updateTaskCounts();
         saveTasksToFirebase();
 
         if (window.calendarInstance) {
-        window.calendarInstance.refetchEvents();
-    }
+            window.calendarInstance.refetchEvents();
+        }
     }
 }
 
@@ -702,9 +813,14 @@ function toggleTaskJV(periodo, taskId) {
 }
 
 // Renderizar tarefas de um período para Larissa
-function renderTasks(periodo) {
+async function renderTasks(periodo) {
     const container = document.getElementById(`tasks-${periodo}`);
-    const tasks = agendaData[periodo];
+    const diaAtual = new Date(selectedAgendaDate).toISOString().slice(0,10);
+    const tasksRecorrentes = await getTarefasDoDiaRecorrentes(periodo, 'larissa', diaAtual);
+    const tasks = [
+        ...agendaData[periodo].filter(task => !task.frequencia), // tarefas normais
+        ...tasksRecorrentes
+    ];
     
     if (tasks.length === 0) {
         container.innerHTML = `
@@ -722,7 +838,8 @@ function renderTasks(periodo) {
              data-task-id="${task.id}">
             <input 
                 type="checkbox" 
-                ${task.completed ? 'checked' : ''} 
+                ${task.frequencia && Array.isArray(task.completedDates) && task.completedDates.includes(diaAtual) ? 'checked' : ''}
+                ${!task.frequencia && task.completed ? 'checked' : ''} 
                 onchange="toggleTask('${periodo}', '${task.id}')"
                 class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300 mr-3"
             >
@@ -742,9 +859,15 @@ function renderTasks(periodo) {
 }
 
 // Renderizar tarefas de um período para João Victor
-function renderTasksJV(periodo) {
+async function renderTasksJV(periodo) {
     const container = document.getElementById(`tasks-jv-${periodo}`);
-    const tasks = agendaDataJV[periodo];
+    const diaAtual = new Date(selectedAgendaDate).toISOString().slice(0,10);
+    const tasksRecorrentes = await getTarefasDoDiaRecorrentes(periodo, 'joaovictor', diaAtual);
+    const tasks = [
+        ...agendaDataJV[periodo].filter(task => !task.frequencia), // tarefas normais
+        ...tasksRecorrentes
+    ];
+
     if (tasks.length === 0) {
         container.innerHTML = `
             <div class="text-center text-gray-400 py-8">
@@ -760,7 +883,8 @@ function renderTasksJV(periodo) {
              data-task-jv-id="${task.id}">
             <input 
                 type="checkbox" 
-                ${task.completed ? 'checked' : ''} 
+                ${task.frequencia && Array.isArray(task.completedDates) && task.completedDates.includes(diaAtual) ? 'checked' : ''}
+                ${!task.frequencia && task.completed ? 'checked' : ''} 
                 onchange="toggleTaskJV('${periodo}', '${task.id}')"
                 class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300 mr-3"
             >
@@ -780,17 +904,17 @@ function renderTasksJV(periodo) {
 }
 
 // Renderizar todas as tarefas para Larissa
-function renderAllTasks() {
-    ['manha', 'tarde', 'noite'].forEach(periodo => {
-        renderTasks(periodo);
-    });
+async function renderAllTasks() {
+    await renderTasks('manha');
+    await renderTasks('tarde');
+    await renderTasks('noite');
 }
 
 // Renderizar todas as tarefas para João Victor
-function renderAllTasksJV() {
-    ['manha', 'tarde', 'noite'].forEach(periodo => {
-        renderTasksJV(periodo);
-    });
+async function renderAllTasksJV() {
+    await renderTasksJV('manha');
+    await renderTasksJV('tarde');
+    await renderTasksJV('noite');
 }
 
 // Atualizar contadores de tarefas
@@ -1368,4 +1492,46 @@ async function confirmRemoveSpecialDate() {
         showToast('Erro ao remover data especial!');
     }
     hideRemoveSpecialDateModal();
+}
+
+// Função para obter tarefas recorrentes do dia específico
+async function getTarefasDoDiaRecorrentes(periodo, usuario, dataRef) {
+    // dataRef: Date ou string no formato YYYY-MM-DD
+    const diaAtual = typeof dataRef === 'string' ? dataRef : new Date(dataRef).toISOString().slice(0,10);
+    const tarefasDoDia = [];
+
+    // Busca todas as agendas salvas no Firestore
+    const agendasRef = window.firestoreCollection(window.db, "agendas");
+    const snapshot = await window.firestoreGetDocs(agendasRef);
+
+    snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const tarefasOriginais = usuario === 'larissa' ? (data.larissa?.[periodo] || []) : (data.joaovictor?.[periodo] || []);
+        tarefasOriginais.forEach(task => {
+            if (!task.frequencia) return;
+            const dataCriacaoStr = new Date(task.createdAt).toISOString().slice(0,10);
+            const dataAtualStr = diaAtual;
+
+            if (dataAtualStr < dataCriacaoStr) return;
+
+            if (task.frequencia === 'diario') {
+                tarefasDoDia.push(task);
+            } else if (task.frequencia === 'semanal') {
+                // Mesmo dia da semana OU mesmo dia de criação
+                const dataCriacao = new Date(task.createdAt);
+                const dataAtual = new Date(diaAtual);
+                if (dataAtualStr === dataCriacaoStr || dataAtual.getDay() === dataCriacao.getDay()) {
+                    tarefasDoDia.push(task);
+                }
+            } else if (task.frequencia === 'mensal') {
+                const dataCriacao = new Date(task.createdAt);
+                const dataAtual = new Date(diaAtual);
+                if (dataAtualStr === dataCriacaoStr || dataAtual.getDate() === dataCriacao.getDate()) {
+                    tarefasDoDia.push(task);
+                }
+            }
+        });
+    });
+
+    return tarefasDoDia;
 }
