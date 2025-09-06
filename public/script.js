@@ -748,10 +748,13 @@ function addTaskUnificada(usuario) {
 
 // Remover tarefa para Larissa
 function removeTask(periodo, taskId) {
-    agendaData[periodo] = agendaData[periodo].filter(task => task.id !== taskId);
-    renderTasks(periodo);
-    updateTaskCounts();
+    // Remove em todos os períodos, caso seja recorrente
+    ['manha', 'tarde', 'noite'].forEach(p => {
+        agendaData[p] = agendaData[p].filter(task => task.id !== taskId);
+    });
+    renderAllTasks();
     saveTasksToFirebase();
+    updateTaskCounts();
 
     if (window.calendarInstance) {
         window.calendarInstance.refetchEvents();
@@ -760,10 +763,12 @@ function removeTask(periodo, taskId) {
 
 // Remover tarefa para João Victor
 function removeTaskJV(periodo, taskId) {
-    agendaDataJV[periodo] = agendaDataJV[periodo].filter(task => task.id !== taskId);
-    renderTasksJV(periodo);
-    updateTaskCounts();
+    ['manha', 'tarde', 'noite'].forEach(p => {
+        agendaDataJV[p] = agendaDataJV[p].filter(task => task.id !== taskId);
+    });
+    renderAllTasksJV();
     saveTasksToFirebase();
+    updateTaskCounts();
 
     if (window.calendarInstance) {
         window.calendarInstance.refetchEvents();
@@ -801,14 +806,26 @@ function toggleTask(periodo, taskId) {
 function toggleTaskJV(periodo, taskId) {
     const task = agendaDataJV[periodo].find(task => task.id === taskId);
     if (task) {
-        task.completed = !task.completed;
+        const todayStr = new Date(selectedAgendaDate).toISOString().slice(0,10);
+        if (task.frequencia) {
+            // Tarefa recorrente: marca/desmarca apenas o dia atual
+            if (!task.completedDates) task.completedDates = [];
+            if (task.completedDates.includes(todayStr)) {
+                task.completedDates = task.completedDates.filter(d => d !== todayStr);
+            } else {
+                task.completedDates.push(todayStr);
+            }
+        } else {
+            // Tarefa normal
+            task.completed = !task.completed;
+        }
         renderTasksJV(periodo);
         updateTaskCounts();
         saveTasksToFirebase();
 
         if (window.calendarInstance) {
-        window.calendarInstance.refetchEvents();
-    }
+            window.calendarInstance.refetchEvents();
+        }
     }
 }
 
@@ -841,14 +858,19 @@ async function renderTasks(periodo) {
                 ${task.frequencia && Array.isArray(task.completedDates) && task.completedDates.includes(diaAtual) ? 'checked' : ''}
                 ${!task.frequencia && task.completed ? 'checked' : ''} 
                 onchange="toggleTask('${periodo}', '${task.id}')"
-                class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300 mr-3"
+                ...
             >
-            <span class="flex-1 text-center ${task.completed ? 'task-completed' : ''} text-gray-700 transition-all duration-300">
+            <span class="flex-1 text-center ${
+                (task.frequencia && Array.isArray(task.completedDates) && task.completedDates.includes(diaAtual)) ||
+                (!task.frequencia && task.completed)
+                    ? 'task-completed'
+                    : ''
+            } text-gray-700 transition-all duration-300">
                 ${task.text}
             </span>
             <span class="text-xs font-bold text-gray-600 ml-3 min-w-[48px] text-right">${task.hora || ''}</span>
             <button 
-                onclick="removeTask('${periodo}', '${task.id}')" 
+                onclick="removeTaskGlobal('${task.id}', 'larissa')" 
                 class="text-gray-400 hover:text-red-400 transition-colors duration-300 p-1 rounded hover:bg-white ml-2"
                 title="Remover tarefa"
             >
@@ -888,12 +910,17 @@ async function renderTasksJV(periodo) {
                 onchange="toggleTaskJV('${periodo}', '${task.id}')"
                 class="w-4 h-4 text-rosa-vibrante bg-white border-2 border-lavanda rounded focus:ring-rosa-medio focus:ring-2 transition-all duration-300 mr-3"
             >
-            <span class="flex-1 text-center ${task.completed ? 'task-completed' : ''} text-gray-700 transition-all duration-300">
+            <span class="flex-1 text-center ${
+                (task.frequencia && Array.isArray(task.completedDates) && task.completedDates.includes(diaAtual)) ||
+                (!task.frequencia && task.completed)
+                    ? 'task-completed'
+                    : ''
+            } text-gray-700 transition-all duration-300">
                 ${task.text}
             </span>
             <span class="text-xs font-bold text-gray-600 ml-3 min-w-[48px] text-right">${task.hora || ''}</span>
             <button 
-                onclick="removeTaskJV('${periodo}', '${task.id}')" 
+                onclick="removeTaskGlobal('${task.id}', 'joaovictor')" 
                 class="text-gray-400 hover:text-red-400 transition-colors duration-300 p-1 rounded hover:bg-white ml-2"
                 title="Remover tarefa"
             >
@@ -1342,34 +1369,69 @@ async function confirmRemoveSpecialDate() {
 }
 
 //exibir tarefas e eventos do dia
-function renderDayEventsInModal(dateStr) {
+async function renderDayEventsInModal(dateStr) {
     const container = document.getElementById('modal-day-events');
     if (!container) return;
 
     // Datas especiais
-    const specialDates = (window.specialDatesList || []).filter(item => item.data === dateStr);
+    const specialDates = (window.specialDatesList || []).filter(item => {
+        if (!item.data) return false;
+        const [year, month, day] = item.data.split('-').map(Number);
+        const currentDate = new Date(dateStr + 'T00:00:00');
+        const itemDate = new Date(year, month - 1, day);
+
+        if (item.frequencia === 'anual') {
+            // Mesmo mês e dia, qualquer ano
+            return currentDate.getMonth() + 1 === month && currentDate.getDate() === day;
+        }
+        if (item.frequencia === 'mensal') {
+            // Mesmo dia do mês
+            return currentDate.getDate() === day;
+        }
+        if (item.frequencia === 'semanal') {
+            // Mesmo dia da semana
+            return currentDate.getDay() === itemDate.getDay();
+        }
+        // Única: compara data exata
+        return item.data === dateStr;
+    });
+
     // Tarefas da agenda
     let agendaHtml = '';
     let agendaJVHtml = '';
 
     // Busca tarefas para Larissa
-    ['manha', 'tarde', 'noite'].forEach(periodo => {
-        const tasks = agendaData[periodo].filter(task => task.hora);
+    const larissaPromises = ['manha', 'tarde', 'noite'].map(async periodo => {
+        const diaAtual = dateStr;
+        const tasksRecorrentes = await getTarefasDoDiaRecorrentes(periodo, 'larissa', diaAtual);
+        const tasks = [
+            ...agendaData[periodo].filter(task => !task.frequencia && task.hora),
+            ...tasksRecorrentes.filter(task => task.hora)
+        ];
         if (tasks.length) {
             agendaHtml += `<div class="mb-2"><span class="font-bold">${periodo.charAt(0).toUpperCase() + periodo.slice(1)}:</span> `;
-            agendaHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded bg-[${task.cor}] text-xs mr-1">${task.text} (${task.hora})</span>`).join('');
+            agendaHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded" style="background:${task.cor};color:#fff;">${task.text} (${task.hora})</span>`).join('');
             agendaHtml += `</div>`;
         }
     });
+
     // Busca tarefas para João Victor
-    ['manha', 'tarde', 'noite'].forEach(periodo => {
-        const tasks = agendaDataJV[periodo].filter(task => task.hora);
+    const jvPromises = ['manha', 'tarde', 'noite'].map(async periodo => {
+        const diaAtual = dateStr;
+        const tasksRecorrentes = await getTarefasDoDiaRecorrentes(periodo, 'joaovictor', diaAtual);
+        const tasks = [
+            ...agendaDataJV[periodo].filter(task => !task.frequencia && task.hora),
+            ...tasksRecorrentes.filter(task => task.hora)
+        ];
         if (tasks.length) {
             agendaJVHtml += `<div class="mb-2"><span class="font-bold">${periodo.charAt(0).toUpperCase() + periodo.slice(1)} (JV):</span> `;
-            agendaJVHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded bg-[${task.cor}] text-xs mr-1">${task.text} (${task.hora})</span>`).join('');
+            agendaJVHtml += tasks.map(task => `<span class="inline-block px-2 py-1 rounded" style="background:${task.cor};color:#fff;">${task.text} (${task.hora})</span>`).join('');
             agendaJVHtml += `</div>`;
         }
     });
+
+    // Aguarda todas as tarefas serem processadas
+    await Promise.all([...larissaPromises, ...jvPromises]);
 
     let html = '';
     if (specialDates.length) {
@@ -1484,11 +1546,9 @@ async function confirmRemoveSpecialDate() {
 
 // Função para obter tarefas recorrentes do dia específico
 async function getTarefasDoDiaRecorrentes(periodo, usuario, dataRef) {
-    // dataRef: Date ou string no formato YYYY-MM-DD
-    const diaAtual = typeof dataRef === 'string' ? dataRef : new Date(dataRef).toISOString().slice(0,10);
+    const diaAtualStr = typeof dataRef === 'string' ? dataRef : new Date(dataRef).toISOString().slice(0,10);
+    const diaAtual = new Date(diaAtualStr + 'T00:00:00');
     const tarefasDoDia = [];
-
-    // Busca todas as agendas salvas no Firestore
     const agendasRef = window.firestoreCollection(window.db, "agendas");
     const snapshot = await window.firestoreGetDocs(agendasRef);
 
@@ -1497,24 +1557,26 @@ async function getTarefasDoDiaRecorrentes(periodo, usuario, dataRef) {
         const tarefasOriginais = usuario === 'larissa' ? (data.larissa?.[periodo] || []) : (data.joaovictor?.[periodo] || []);
         tarefasOriginais.forEach(task => {
             if (!task.frequencia) return;
-            const dataCriacaoStr = new Date(task.createdAt).toISOString().slice(0,10);
-            const dataAtualStr = diaAtual;
+            const dataCriacao = new Date(task.createdAt);
+            const dataCriacaoStr = dataCriacao.toISOString().slice(0,10);
 
-            if (dataAtualStr < dataCriacaoStr) return;
+            // Só considera tarefas a partir da data de criação
+            if (diaAtualStr < dataCriacaoStr) return;
 
             if (task.frequencia === 'diario') {
                 tarefasDoDia.push(task);
             } else if (task.frequencia === 'semanal') {
-                // Mesmo dia da semana OU mesmo dia de criação
-                const dataCriacao = new Date(task.createdAt);
-                const dataAtual = new Date(diaAtual);
-                if (dataAtualStr === dataCriacaoStr || dataAtual.getDay() === dataCriacao.getDay()) {
+                // Inclui o dia de criação explicitamente
+                if (diaAtualStr === dataCriacaoStr ||
+                    (Math.floor((diaAtual - dataCriacao) / (1000 * 60 * 60 * 24)) >= 0 && diaAtual.getDay() === dataCriacao.getDay())
+                ) {
                     tarefasDoDia.push(task);
                 }
             } else if (task.frequencia === 'mensal') {
-                const dataCriacao = new Date(task.createdAt);
-                const dataAtual = new Date(diaAtual);
-                if (dataAtualStr === dataCriacaoStr || dataAtual.getDate() === dataCriacao.getDate()) {
+                // Inclui o dia de criação explicitamente
+                if (diaAtualStr === dataCriacaoStr ||
+                    (diaAtual.getDate() === dataCriacao.getDate() && diaAtual >= dataCriacao)
+                ) {
                     tarefasDoDia.push(task);
                 }
             }
@@ -1522,4 +1584,49 @@ async function getTarefasDoDiaRecorrentes(periodo, usuario, dataRef) {
     });
 
     return tarefasDoDia;
+}
+
+async function removeTaskGlobal(taskId, usuario) {
+    const agendasRef = window.firestoreCollection(window.db, "agendas");
+    const snapshot = await window.firestoreGetDocs(agendasRef);
+
+    for (const docSnap of snapshot.docs) {
+        const data = docSnap.data();
+        let alterado = false;
+
+        if (usuario === 'larissa') {
+            ['manha', 'tarde', 'noite'].forEach(periodo => {
+                if (data.larissa && data.larissa[periodo]) {
+                    const originalLength = data.larissa[periodo].length;
+                    data.larissa[periodo] = data.larissa[periodo].filter(task => task.id !== taskId);
+                    if (data.larissa[periodo].length !== originalLength) alterado = true;
+                }
+            });
+        } else {
+            ['manha', 'tarde', 'noite'].forEach(periodo => {
+                if (data.joaovictor && data.joaovictor[periodo]) {
+                    const originalLength = data.joaovictor[periodo].length;
+                    data.joaovictor[periodo] = data.joaovictor[periodo].filter(task => task.id !== taskId);
+                    if (data.joaovictor[periodo].length !== originalLength) alterado = true;
+                }
+            });
+        }
+
+        if (alterado) {
+            await window.firestoreSetDoc(
+                window.firestoreDoc(window.db, "agendas", docSnap.id),
+                data
+            );
+        }
+    }
+
+    // Atualiza a agenda local e a interface
+    await loadTasksFromFirebase();
+    renderAllTasks();
+    renderAllTasksJV();
+    updateTaskCounts();
+    if (window.calendarInstance) {
+        window.calendarInstance.refetchEvents();
+    }
+    showToast('Tarefa removida!');
 }
