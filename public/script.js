@@ -1304,53 +1304,41 @@ function renderSpecialDatesList(lista) {
                 <span class="font-bold">${item.nome}</span> - ${item.data}${item.hora ? ' ' + item.hora : ''} 
                 ${item.frequencia ? `<span class="text-xs text-gray-500">(${item.frequencia})</span>` : ''}
             </div>
-            <button onclick="showRemoveSpecialDateModal(${idx})" ...>×</button>
+            <button onclick="showRemoveSpecialDateModal(${idx})" title="Remover" class="text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">×</button>
         </li>`
     ).join('');
 }
 
-async function removeSpecialDate(idx) {
-    let pendingRemoveIdx = null;
+function showRemoveSpecialDateModal(idx) {
+    pendingRemoveIdx = idx;
+    document.getElementById('confirm-remove-modal').classList.remove('hidden');
+}
 
-    function showRemoveSpecialDateModal(idx) {
-        pendingRemoveIdx = idx;
-        document.getElementById('confirm-remove-modal').classList.remove('hidden');
+function hideRemoveSpecialDateModal() {
+    document.getElementById('confirm-remove-modal').classList.add('hidden');
+    pendingRemoveIdx = null;
+}
+
+async function confirmRemoveSpecialDate() {
+    if (pendingRemoveIdx === null || !window.specialDatesList) return;
+    // Pega o evento a ser removido
+    const eventoRemover = window.specialDatesList[pendingRemoveIdx];
+    // Remove todas as instâncias que tenham o mesmo nome, data e frequência
+    const lista = window.specialDatesList.filter(item =>
+        !(item.nome === eventoRemover.nome &&
+          item.data === eventoRemover.data &&
+          item.frequencia === eventoRemover.frequencia &&
+          item.hora === eventoRemover.hora)
+    );
+    try {
+        const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
+        await window.firestoreSetDoc(docRef, { datas: lista });
+        showToast('Data especial removida!');
+        // O listener do Firestore atualizará a lista e o calendário em tempo real
+    } catch (error) {
+        showToast('Erro ao remover data especial!');
     }
-
-    document.getElementById('cancel-remove-btn').addEventListener('click', function() {
-        document.getElementById('confirm-remove-modal').classList.add('hidden');
-        pendingRemoveIdx = null;
-    });
-
-    document.getElementById('confirm-remove-btn').addEventListener('click', async function() {
-        if (pendingRemoveIdx === null || !window.specialDatesList) return;
-        const lista = [...window.specialDatesList];
-        lista.splice(pendingRemoveIdx, 1);
-        try {
-            const docRef = window.firestoreDoc(window.db, "datasEspeciais", "lista");
-            await window.firestoreSetDoc(docRef, { datas: lista });
-            showToast('Data especial removida!');
-            // O listener do Firestore atualizará a lista e o calendário em tempo real
-        } catch (error) {
-            showToast('Erro ao remover data especial!');
-        }
-        document.getElementById('confirm-remove-modal').classList.add('hidden');
-        pendingRemoveIdx = null;
-    });
-
-    // Troque no renderSpecialDatesList o onclick do botão X:
-    ul.innerHTML = lista.map((item, idx) =>
-        `<li class="flex items-center justify-between gap-2 group">
-            <div class="flex items-center gap-2">
-                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${item.cor || '#ec4899'};"></span>
-                <span class="font-bold">${item.nome}</span> - ${item.data}${item.hora ? ' ' + item.hora : ''} 
-                ${item.frequencia ? `<span class="text-xs text-gray-500">(${item.frequencia})</span>` : ''}
-            </div>
-            <button onclick="showRemoveSpecialDateModal(${idx})" title="Remover" class="text-gray-400 group-hover:text-red-500 transition-colors text-lg font-bold px-1 rounded hover:bg-gray-100">
-                ×
-            </button>
-        </li>`
-    ).join('');
+    hideRemoveSpecialDateModal();
 }
 
 //exibir tarefas e eventos do dia
