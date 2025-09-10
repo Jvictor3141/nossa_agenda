@@ -736,6 +736,25 @@ function addTaskUnificada(usuario) {
     const corRadios = document.querySelectorAll(`input[name="cor-${usuario === 'larissa' ? 'larissa' : 'jv'}"]`);
     if (corRadios.length) corRadios[0].checked = true;
 
+    // --- RESET DO AVANÇADO ---
+    if (usuario === 'larissa') {
+        const avancado = document.getElementById('avancado-larissa');
+        const freqInput = document.getElementById('frequencia-larissa');
+        if (avancado) avancado.checked = false;
+        if (freqInput) {
+            freqInput.classList.add('hidden');
+            freqInput.value = '';
+        }
+    } else {
+        const avancado = document.getElementById('avancado-jv');
+        const freqInput = document.getElementById('frequencia-jv');
+        if (avancado) avancado.checked = false;
+        if (freqInput) {
+            freqInput.classList.add('hidden');
+            freqInput.value = '';
+        }
+    }
+
     renderAllTasks();
     renderAllTasksJV();
     saveTasksToFirebase();

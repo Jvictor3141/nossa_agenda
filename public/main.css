@@ -294,3 +294,10 @@ html.dark #special-date-modal input::placeholder {
     color: #c7c7d1;
     opacity: 1;
 }
+/* --- ADICIONE ABAIXO PARA OS INPUTS AVANÇADOS DE TAREFA --- */
+html.dark #frequencia-larissa,
+html.dark #frequencia-jv {
+    color: #f3e8ff !important;
+    background: #23232a !important;
+    border-color: #444466 !important;
+}
