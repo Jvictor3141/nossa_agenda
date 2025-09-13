@@ -74,7 +74,7 @@
 
         // Crossfade
         showRegisterBtn?.addEventListener('click', () => {
-            loginError.textContent = '';
+            if (loginError) loginError.textContent = '';
             loginForm.classList.add('is-hidden');
             registerForm.classList.remove('is-hidden');
         });
@@ -87,7 +87,7 @@
         // Submit handlers
         loginForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            loginError.textContent = '';
+            if (loginError) loginError.textContent = '';
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             try {
@@ -100,7 +100,7 @@
 
         registerForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            registerError.textContent = '';
+            if (registerError) registerError.textContent = '';
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
             try {
@@ -150,6 +150,7 @@
         </div>
         <button type="submit" class="w-full bg-azul-login-btn text-white py-2 rounded-lg hover:bg-rosa-medio transition-colors font-medium">Criar Conta</button>
         <button type="button" id="back-login-btn" class="mt-2 w-full bg-gray-200 text-azul-login py-2 rounded-lg hover:bg-gray-300 font-medium">Voltar ao login</button>
+        <div id="register-error" class="mt-2 text-red-500 text-sm font-semibold"></div>
       </form>
     </div>
   </div>
