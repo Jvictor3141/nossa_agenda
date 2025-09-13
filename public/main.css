@@ -279,6 +279,39 @@ html.dark .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
     font-weight: bold;
 }
 
+/* Inputs no modo dark para agenda e financeiro */
+html.dark input,
+html.dark select,
+html.dark textarea {
+    background: #23232a !important;
+    color: #f3e8ff !important;
+    border-color: #444466 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #c7c7d1 !important;
+    opacity: 1;
+}
+
+/* Para inputs específicos do financeiro e agenda, se quiser reforçar */
+html.dark #input-larissa,
+html.dark #input-hora-larissa,
+html.dark #input-jv,
+html.dark #input-hora-jv,
+html.dark #valor-entrada,
+html.dark #desc-entrada,
+html.dark #cat-entrada,
+html.dark #pessoa-entrada,
+html.dark #valor-gasto,
+html.dark #desc-gasto,
+html.dark #cat-gasto,
+html.dark #tipo-gasto {
+    background: #23232a !important;
+    color: #f3e8ff !important;
+    border-color: #444466 !important;
+}
+
 /* Corrige cor do texto dos inputs do modal */
 #special-date-modal input,
 #special-date-modal select {
