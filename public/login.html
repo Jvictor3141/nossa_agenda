@@ -182,22 +182,6 @@
             loginError.textContent = 'E-mail ou senha inválidos!';
             }
         });
-
-        registerForm?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (registerError) registerError.textContent = '';
-            const email = document.getElementById('register-email').value.trim();
-            const password = document.getElementById('register-password').value;
-            try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            // Volta ao login com crossfade
-            registerForm.classList.add('is-hidden');
-            loginForm.classList.remove('is-hidden');
-            loginError.textContent = 'Conta criada! Faça login.';
-            } catch (err) {
-            registerError.textContent = 'Erro ao criar conta. ' + (err?.message || '');
-            }
-        });
         });
     </script>
 </head>
