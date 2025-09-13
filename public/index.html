@@ -45,6 +45,10 @@
                     <h1 id="page-title" class="w-full text-white text-4xl font-medium py-4 text-center">
                         Nossa Agendinha
                     </h1>
+                    <!-- Adicione este botão na barra do topo, dentro do <div class="flex bg-rosa-vibrante justify-between items-center px-4"> -->
+                    <button id="logout-btn" class="bg-white text-rosa-vibrante font-bold px-4 py-2 rounded-lg shadow hover:bg-rosa-claro transition-colors ml-2">
+                        Logout
+                    </button>
                 </div>
                 <div id="current-date" class="w-full text-gray-600 bg-gray-100 rounded py-2 inline-block"></div>
                 <div id="current-day" class="text-2xl font-medium text-rosa-vibrante mt-1"></div>
@@ -579,6 +583,18 @@
     window.firestoreSetDoc = setDoc;
     window.firestoreGetDoc = getDoc;
     window.firestoreOnSnapshot = onSnapshot;
+
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+    const auth = getAuth();
+
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            window.location.href = "login.html";
+        } catch (err) {
+            showToast('Erro ao sair!');
+        }
+    });
     </script>
     <script src="./script.js"></script>
     <div id="toast" class="fixed bottom-6 right-6 bg-rosa-medio text-white px-4 py-2 rounded-lg shadow-lg opacity-0 pointer-events-none transition-all duration-500 z-50"></div>
