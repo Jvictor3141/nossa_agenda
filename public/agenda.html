@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeSync</title>
+    <link rel="icon" type="image/png" href="./assets/icons/favicon.png">
+    <link rel="stylesheet" href="./main.css">
+
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'rosa-bebe': '#fdf2f8',
+                        'rosa-claro': '#fce7f3',
+                        'rosa-medio': '#f9a8d4',
+                        'rosa-vibrante': '#ec4899',
+                        'lavanda': '#f3e8ff'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-rosa-bebe min-h-screen font-sans">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-lavanda">
+        <div class="w-full pb-6">
+            <div class="text-center">
+                <div class="flex bg-rosa-vibrante justify-between items-center px-4">
+                    <!-- Menu Hambúrguer -->
+                    <div class="hamburger bg-rosa-medio hover:bg-rosa-vibrante shadow-lg rounded-full p-2 transition-all duration-300 cursor-pointer flex items-center justify-center"
+                    onclick="toggleMenu()" aria-label="Abrir menu lateral" tabindex="0">
+                        <div class="w-8 h-8 flex flex-col justify-center items-center space-y-1">
+                            <span class="w-7 h-1 bg-white rounded transition-all duration-300"></span>
+                            <span class="w-7 h-1 bg-white rounded transition-all duration-300"></span>
+                            <span class="w-7 h-1 bg-white rounded transition-all duration-300"></span>
+                        </div>
+                    </div>
+                    <h1 id="page-title" class="w-full text-white text-4xl font-medium py-4 text-center">
+                        Nossa Agendinha
+                    </h1>
+                    <!-- Adicione este botão na barra do topo, dentro do <div class="flex bg-rosa-vibrante justify-between items-center px-4"> -->
+                    <button id="logout-btn" class="bg-white text-rosa-vibrante font-bold px-4 py-2 rounded-lg shadow hover:bg-rosa-claro transition-colors ml-2">
+                        Logout
+                    </button>
+                </div>
+                <div id="current-date" class="w-full text-gray-600 bg-gray-100 rounded py-2 inline-block"></div>
+                <div id="current-day" class="text-2xl font-medium text-rosa-vibrante mt-1"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overlay do Menu -->
+    <div id="menu-overlay" class="overlay fixed inset-0 bg-black bg-opacity-50 z-40" onclick="closeMenu()"></div>
+
+    <!-- Menu Lateral -->
+    <nav id="sidebar" class="sidebar fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 border-r border-lavanda">
+        <div class="p-0">
+            <div class="flex items-center justify-between mb-8 bg-rosa-vibrante px-4 py-6">
+                <h2 class="text-xl font-medium text-white">Menu</h2>
+                <div class="flex items-center gap-3">
+                    <!-- Switch de tema compacto -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="theme-toggle" class="sr-only peer">
+                        <span class="text-xl absolute left-1 top-1 transition-all pointer-events-none peer-checked:opacity-0">🌞</span>
+                        <span class="text-xl absolute left-1 top-1 opacity-0 transition-all pointer-events-none peer-checked:opacity-100">🌙</span>
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"></div>
+                    </label>
+                    <button onclick="closeMenu()" class="text-white hover:text-rosa-vibrante transition-colors ml-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <ul class="space-y-4">
+                <li>
+                    <button onclick="showSection('agenda')" class="w-full flex items-center p-3 text-left rounded-lg hover:bg-rosa-claro transition-colors">
+                        <span class="text-2xl mr-3">📋</span>
+                        <span class="text-gray-700 font-medium">Agenda</span>
+                    </button>
+                </li>
+                <li>
+                    <button onclick="showSection('financas')" class="w-full flex items-center p-3 text-left rounded-lg hover:bg-rosa-claro transition-colors">
+                        <span class="text-2xl mr-3">💰</span>
+                        <span class="text-gray-700 font-medium">Finanças</span>
+                    </button>
+                </li>
+                <li>
+                    <button onclick="showSettings()" class="w-full flex items-center p-3 text-left rounded-lg hover:bg-rosa-claro transition-colors">
+                        <span class="text-2xl mr-3">⚙️</span>
+                        <span class="text-gray-700 font-medium">Configurações</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full">
+        <!-- Botão para Mostrar/Ocultar Calendário -->
+        <button id="toggle-calendar" class="flex items-center gap-2 text-rosa-vibrante font-medium focus:outline-none mb-2 bg-rosa-medio/15 hover:bg-rosa-medio/30 transition-colors rounded-lg px-3 py-2" aria-label="Mostrar ou ocultar calendário">
+            <span class="text-2xl">📅</span>
+            <span>Mostrar Calendário</span>
+        </button>
+        <div id="calendar-container" class="mb-6 overflow-hidden transition-all duration-500 max-h-0 opacity-0 relative">
+            <div class="flex flex-col md:flex-row gap-6 overflow-x-auto">
+                <div class="flex-1 min-w-[350px] md:min-w-[500px]">
+                    <div id="fullcalendar" class="bg-white rounded-xl shadow-md border border-lavanda p-4"></div>
+                </div>
+                <div class="md:w-[24rem] w-full">
+                    <!-- Legenda de datas especiais -->
+                    <div id="calendar-legend" class="bg-white rounded-xl shadow-md border border-lavanda p-4 transition-all duration-500 max-h-none opacity-100">
+                        <h4 class="text-lg font-medium text-rosa-vibrante mb-2">Datas Especiais do Mês</h4>
+                        <ul id="special-dates-list" class="text-gray-700 text-sm space-y-1">
+                            <!-- As datas especiais serão inseridas aqui via JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal para adicionar data especial -->
+            <div id="special-date-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full relative">
+                    <button onclick="closeSpecialDateModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-400 text-2xl">&times;</button>
+                    <h3 class="text-lg font-bold text-rosa-vibrante mb-4">Adicionar Data Especial</h3>
+                    <form id="special-date-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Nome do Evento:</label>
+                            <input type="text" id="special-date-name" class="w-full px-3 py-2 border border-lavanda rounded-lg" placeholder="Ex: Aniversário, Namoro..." required>
+                        </div>
+                        <span id="special-date-alert" class="block mt-1 text-sm text-red-500 font-semibold hidden"></span>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 flex items-center gap-2">
+                                Data:
+                                <input type="checkbox" id="edit-special-date-date" class="ml-2">
+                            </label>
+                            <input type="date" id="special-date-date" class="w-full px-3 py-2 border border-lavanda rounded-lg" disabled>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 flex items-center gap-2">
+                                Frequência:
+                                <input type="checkbox" id="edit-special-date-repeat" class="ml-2">
+                            </label>
+                            <div id="special-date-repeat-wrapper" class="hidden">
+                                <select id="special-date-repeat" class="w-full px-3 py-2 border border-lavanda rounded-lg">
+                                    <option value="anual">Anual</option>
+                                    <option value="mensal">Mensal</option>
+                                    <option value="semanal">Semanal</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 flex items-center gap-2">
+                                Hora (opcional):
+                                <input type="checkbox" id="edit-special-date-time" class="ml-2">
+                            </label>
+                            <div id="special-date-time-wrapper" class="hidden">
+                                <input type="time" id="special-date-time" class="w-26 px-3 py-2 border border-lavanda rounded-lg">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-rosa-vibrante text-white py-2 rounded-lg hover:bg-rosa-medio transition-colors font-medium">
+                            Salvar
+                        </button>
+                    </form>
+                    <div id="modal-day-events" class="mt-6">
+                            <!-- Tarefas e eventos do dia serão exibidos aqui via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Agenda -->
+        <div id="agenda-section">
+
+            <!-- Dia de Larissa -->
+            <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de Larissa</h3>
+
+                <!-- Adicionar Tarefa Unificada -->
+                <div class="flex flex-col md:flex-row gap-2 mb-4 justify-center items-center w-full">
+                    <input type="text" id="input-larissa" placeholder="Nova tarefa..." class="flex-1 max-w-xs px-3 py-2 border border-lavanda rounded-lg">
+                    <input type="time" id="input-hora-larissa" class="px-3 py-2 border border-lavanda rounded-lg cursor-pointer">
+                    <div class="flex gap-2">
+                        <input type="radio" name="cor-larissa" id="cor-larissa-rosa" value="#74aee8" class="hidden" checked>
+                        <label for="cor-larissa-rosa" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #74aee8;"></label>
+                        
+                        <input type="radio" name="cor-larissa" id="cor-larissa-vibrante" value="#ba82e8" class="hidden">
+                        <label for="cor-larissa-vibrante" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #ba82e8;"></label>
+                        
+                        <input type="radio" name="cor-larissa" id="cor-larissa-lavanda" value="#a6695a" class="hidden">
+                        <label for="cor-larissa-lavanda" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #a6695a;"></label>
+                    </div>
+                    <button onclick="addTaskUnificada('larissa')" class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante">+</button>
+
+                    <!-- detalhes avancados -->
+                    <div class="flex items-center gap-2 ml-auto">
+                        <label class="flex items-center gap-1 font-medium text-sm">
+                            <input type="checkbox" id="avancado-larissa" class="accent-rosa-vibrante">
+                            Avançado
+                        </label>
+                        <select id="frequencia-larissa" class="hidden px-2 py-1 border border-lavanda rounded-lg text-sm">
+                            <option value="">Frequência:</option>
+                            <option value="diario">Diário</option>
+                            <option value="semanal">Semanal</option>
+                            <option value="mensal">Mensal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+                    
+                    <!-- Manhã -->
+                    <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                                <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                                Manhã
+                            </h2>
+                            <span class="text-sm text-gray-500">6h - 12h</span>
+                        </div>
+                        
+                        <div id="tasks-manha" class="space-y-3 mb-4 min-h-[200px]">
+                            <!-- Tarefas da manhã serão inseridas aqui -->
+                        </div>
+                    </section>
+
+                    <!-- Tarde -->
+                    <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                                <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                                Tarde
+                            </h2>
+                            <span class="text-sm text-gray-500">12h - 18h</span>
+                        </div>
+                        
+                        <div id="tasks-tarde" class="space-y-3 mb-4 min-h-[200px]">
+                            <!-- Tarefas da tarde serão inseridas aqui -->
+                        </div>
+                    </section>
+
+                    <!-- Noite -->
+                    <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                                <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                                Noite
+                            </h2>
+                            <span class="text-sm text-gray-500">18h - 24h</span>
+                        </div>
+                        
+                        <div id="tasks-noite" class="space-y-3 mb-4 min-h-[200px]">
+                            <!-- Tarefas da noite serão inseridas aqui -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <hr class="my-8 border-t-1 border-gray-400" style="opacity:0.4; width:calc(100% + 20px); margin-left:-10px; margin-right:-10px;">
+
+            <!-- Dia de João Victor -->
+            <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de João Victor</h3>
+
+                <!-- Adicionar Tarefa Unificada -->
+                <div class="flex flex-col md:flex-row gap-2 mb-4 justify-center items-center w-full">
+                    <input type="text" id="input-jv" placeholder="Nova tarefa..." class="flex-1 max-w-xs px-3 py-2 border border-lavanda rounded-lg">
+                    <input type="time" id="input-hora-jv" class="px-3 py-2 border border-lavanda rounded-lg cursor-pointer">
+                    <div class="flex gap-2">
+                        <input type="radio" name="cor-jv" id="cor-jv-rosa" value="#74aee8" class="hidden" checked>
+                        <label for="cor-jv-rosa" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #74aee8;"></label>
+                        
+                        <input type="radio" name="cor-jv" id="cor-jv-vibrante" value="#ba82e8" class="hidden">
+                        <label for="cor-jv-vibrante" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #ba82e8;"></label>
+                        
+                        <input type="radio" name="cor-jv" id="cor-jv-lavanda" value="#a6695a" class="hidden">
+                        <label for="cor-jv-lavanda" class="w-8 h-8 rounded-full border-2 border-lavanda cursor-pointer flex items-center justify-center" style="background-color: #a6695a;"></label>
+                    </div>
+                    <button onclick="addTaskUnificada('joaovictor')" class="px-4 py-2 bg-rosa-medio text-white rounded-lg hover:bg-rosa-vibrante">+</button>
+
+                    <!-- Detalhes Avançados -->
+                    <div class="flex items-center gap-2 ml-auto">
+                        <label class="flex items-center gap-1 font-medium text-sm">
+                            <input type="checkbox" id="avancado-jv" class="accent-rosa-vibrante">
+                            Avançado
+                        </label>
+                        <select id="frequencia-jv" class="hidden px-2 py-1 border border-lavanda rounded-lg text-sm">
+                            <option value="">Frequência</option>
+                            <option value="diario">Diário</option>
+                            <option value="semanal">Semanal</option>
+                            <option value="mensal">Mensal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+                    
+                    <!-- Manhã -->
+                    <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                                <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                                Manhã
+                            </h2>
+                            <span class="text-sm text-gray-500">6h - 12h</span>
+                        </div>
+                        
+                        <div id="tasks-jv-manha" class="space-y-3 mb-4 min-h-[200px]">
+                            <!-- Tarefas da manhã serão inseridas aqui -->
+                        </div>
+                    </section>
+
+                    <!-- Tarde -->
+                    <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                                <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                                Tarde
+                            </h2>
+                            <span class="text-sm text-gray-500">12h - 18h</span>
+                        </div>
+                        
+                        <div id="tasks-jv-tarde" class="space-y-3 mb-4 min-h-[200px]">
+                            <!-- Tarefas da tarde serão inseridas aqui -->
+                        </div>
+                    </section>
+
+                    <!-- Noite -->
+                    <section class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-medium text-gray-800 flex items-center">
+                                <span class="w-3 h-3 bg-rosa-medio rounded-full mr-3"></span>
+                                Noite
+                            </h2>
+                            <span class="text-sm text-gray-500">18h - 24h</span>
+                        </div>
+                        
+                        <div id="tasks-jv-noite" class="space-y-3 mb-4 min-h-[200px]">
+                            <!-- Tarefas da noite serão inseridas aqui -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Resumo do dia -->
+            <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">Resumo do Dia</h3>
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div id="count-manha" class="text-2xl font-bold text-rosa-vibrante">0</div>
+                        <div class="text-sm text-gray-600">Manhã</div>
+                    </div>
+                    <div>
+                        <div id="count-tarde" class="text-2xl font-bold text-rosa-vibrante">0</div>
+                        <div class="text-sm text-gray-600">Tarde</div>
+                    </div>
+                    <div>
+                        <div id="count-noite" class="text-2xl font-bold text-rosa-vibrante">0</div>
+                        <div class="text-sm text-gray-600">Noite</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Finanças -->
+        <div id="financas-section" class="section-hidden">
+            <!-- Dashboard Financeiro -->
+            <div class="grid gap-6 mb-8">
+                <!-- Resumo Mensal -->
+                <div class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-medium text-gray-800 flex items-center">
+                            <span class="text-3xl mr-3">💰</span>
+                            Controle Financeiro
+                        </h2>
+                        <div id="current-month" class="text-lg text-gray-600"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Total Entradas -->
+                        <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-green-600 font-medium">Entradas</p>
+                                    <p id="total-entradas" class="text-2xl font-bold text-green-700">R$ 0,00</p>
+                                </div>
+                                <span class="text-3xl">📈</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Gastos -->
+                        <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-red-600 font-medium">Gastos</p>
+                                    <p id="total-gastos" class="text-2xl font-bold text-red-700">R$ 0,00</p>
+                                </div>
+                                <span class="text-3xl">📉</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Saldo -->
+                        <div class="bg-rosa-claro rounded-lg p-4 border border-lavanda">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-rosa-vibrante font-medium">Saldo</p>
+                                    <p id="saldo-atual" class="text-2xl font-bold text-rosa-vibrante">R$ 0,00</p>
+                                </div>
+                                <span class="text-3xl">💳</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulários de Entrada e Gasto -->
+            <div class="grid gap-6 md:grid-cols-2 mb-8">
+                <!-- Adicionar Entrada -->
+                <div class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                        <span class="text-2xl mr-2">💵</span>
+                        Adicionar Entrada
+                    </h3>
+                    
+                    <form id="form-entrada" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                            <input type="number" id="valor-entrada" step="0.01" placeholder="0,00" 
+                                   class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                            <input type="text" id="desc-entrada" placeholder="Ex: Salário, Freelance..." 
+                                   class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                            <select id="cat-entrada" class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                                <option value="salario">💼 Salário</option>
+                                <option value="freelance">💻 Freelance</option>
+                                <option value="presente">🎁 Presente</option>
+                                <option value="investimento">📈 Investimento</option>
+                                <option value="outros">🔄 Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pessoa</label>
+                            <select id="pessoa-entrada" class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                                <option value="pessoa1">Larissa</option>
+                                <option value="pessoa2">João Victor</option>
+                                <option value="ambos">Ambos</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors">
+                            Adicionar Entrada
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Adicionar Gasto -->
+                <div class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                        <span class="text-2xl mr-2">💸</span>
+                        Adicionar Gasto
+                    </h3>
+                    
+                    <form id="form-gasto" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                            <input type="number" id="valor-gasto" step="0.01" placeholder="0,00" 
+                                   class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                            <input type="text" id="desc-gasto" placeholder="Ex: Supermercado, Gasolina..." 
+                                   class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                            <select id="cat-gasto" class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                                <option value="alimentacao">🍕 Alimentação</option>
+                                <option value="transporte">🚗 Transporte</option>
+                                <option value="casa">🏠 Casa/Moradia</option>
+                                <option value="lazer">🎮 Lazer</option>
+                                <option value="roupas">👕 Roupas</option>
+                                <option value="saude">💊 Saúde</option>
+                                <option value="educacao">📚 Educação</option>
+                                <option value="outros">🔄 Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                            <select id="tipo-gasto" class="w-full px-3 py-2 border border-lavanda rounded-lg focus:outline-none focus:ring-2 focus:ring-rosa-medio">
+                                <option value="pessoa1">Larissa</option>
+                                <option value="pessoa2">João Victor</option>
+                                <option value="compartilhado">Compartilhado</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors">
+                            Adicionar Gasto
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de Transações -->
+            <div class="bg-white rounded-xl shadow-md border border-lavanda p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-medium text-gray-800 flex items-center">
+                        <span class="text-2xl mr-2">📊</span>
+                        Transações Recentes
+                    </h3>
+                    <div class="flex gap-2">
+                        <select id="filtro-tipo" class="px-3 py-1 border border-lavanda rounded text-sm">
+                            <option value="todos">Todos</option>
+                            <option value="entrada">Entradas</option>
+                            <option value="gasto">Gastos</option>
+                        </select>
+                        <button onclick="clearFinancialData()" class="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600">
+                            Limpar Mês
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="lista-transacoes" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Transações serão inseridas aqui -->
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Modal de confirmação de exclusão de data especial -->
+    <div id="confirm-remove-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-xs w-full relative border border-lavanda">
+            <h3 class="text-lg font-bold text-rosa-vibrante mb-4">Remover Data Especial</h3>
+            <p class="mb-6 text-gray-700">Tem certeza que deseja remover esta data especial?</p>
+            <div class="flex justify-end gap-3">
+                <button id="cancel-remove-btn" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors font-medium">Cancelar</button>
+                <button id="confirm-remove-btn" class="px-4 py-2 rounded-lg bg-rosa-vibrante text-white hover:bg-rosa-medio transition-colors font-medium">Remover</button>
+            </div>
+        </div>
+    </div>
+    <footer class="w-full mt-12 py-6 bg-rosa-medio bg-opacity-80 text-center text-gray-100 text-sm">
+        © 2025 Nossa Vidinha Juntos. Todos os direitos reservados.
+    </footer>
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        const auth = getAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+            }
+        });
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        window.firestoreCollection = collection;
+        window.firestoreGetDocs = getDocs;
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDoL4R2GmKy7gqnWXKei8V5lflH4plEMkM",
+            authDomain: "agenda-f58b7.firebaseapp.com",
+            projectId: "agenda-f58b7",
+            storageBucket: "agenda-f58b7.firebasestorage.app",
+            messagingSenderId: "88974735864",
+            appId: "1:88974735864:web:0e9a029173d6409f61be0d",
+            measurementId: "G-0DSR8JY53N"
+        };
+
+        // Inicializa Firebase e Firestore e expõe no window
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+        window.firestoreDoc = doc;
+        window.firestoreSetDoc = setDoc;
+        window.firestoreGetDoc = getDoc;
+        window.firestoreOnSnapshot = onSnapshot;
+
+        document.getElementById('logout-btn')?.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = "login.html";
+            } catch (err) {
+                showToast('Erro ao sair!');
+            }
+        });
+    </script>
+    <script src="./script.js"></script>
+    <div id="toast" class="fixed bottom-6 right-6 bg-rosa-medio text-white px-4 py-2 rounded-lg shadow-lg opacity-0 pointer-events-none transition-all duration-500 z-50"></div>
+
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+</body>
+</html>
+
