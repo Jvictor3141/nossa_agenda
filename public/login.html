@@ -43,145 +43,146 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
-        // Lottie bg
-        if (window.lottie) {
-            window.lottie.loadAnimation({
-            container: document.getElementById('bg-lottie'),
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            path: 'assets/animations/bg-animation.json'
-            });
-        }
 
-        // Validação de senha em tempo real
-        const registerPassword = document.getElementById('register-password');
-        const confirmPassword = document.getElementById('register-password-confirm');
-        const lengthCheck = document.getElementById('pwd-length');
-        const upperCheck = document.getElementById('pwd-upper');
-        const lowerCheck = document.getElementById('pwd-lower');
-        const numberCheck = document.getElementById('pwd-number');
-        const symbolCheck = document.getElementById('pwd-symbol');
-        const matchCheck = document.getElementById('pwd-match');
+          // Elements
+          const wrapper = document.querySelector('.auth-wrapper');
+          const loginForm = document.getElementById('login-form');
+          const registerForm = document.getElementById('register-form');
+          const showRegisterBtn = document.getElementById('show-register-btn');
+          const backLoginBtn = document.getElementById('back-login-btn');
+          const loginError = document.getElementById('login-error');
+          const registerError = document.getElementById('register-error');
+          
+          // Lottie bg
+          if (window.lottie) {
+              window.lottie.loadAnimation({
+              container: document.getElementById('bg-lottie'),
+              renderer: 'svg',
+              loop: true,
+              autoplay: true,
+              path: 'assets/animations/bg-animation.json'
+              });
+          }
 
-        // Função para validar a força da senha
-        function validatePassword() {
-          const pwd = registerPassword.value;
-          
-          // Verificações
-          const hasLength = pwd.length >= 8;
-          const hasUpper = /[A-Z]/.test(pwd);
-          const hasLower = /[a-z]/.test(pwd);
-          const hasNumber = /[0-9]/.test(pwd);
-          const hasSymbol = /[^A-Za-z0-9]/.test(pwd);
-          
-          // Atualiza os indicadores
-          lengthCheck.className = hasLength ? 'text-green-500' : 'text-red-500';
-          upperCheck.className = hasUpper ? 'text-green-500' : 'text-red-500';
-          lowerCheck.className = hasLower ? 'text-green-500' : 'text-red-500';
-          numberCheck.className = hasNumber ? 'text-green-500' : 'text-red-500';
-          symbolCheck.className = hasSymbol ? 'text-green-500' : 'text-red-500';
-          
-          return hasLength && hasUpper && hasLower && hasNumber && hasSymbol;
-        }
+          // Validação de senha em tempo real
+          const registerPassword = document.getElementById('register-password');
+          const confirmPassword = document.getElementById('register-password-confirm');
+          const lengthCheck = document.getElementById('pwd-length');
+          const upperCheck = document.getElementById('pwd-upper');
+          const lowerCheck = document.getElementById('pwd-lower');
+          const numberCheck = document.getElementById('pwd-number');
+          const symbolCheck = document.getElementById('pwd-symbol');
+          const matchCheck = document.getElementById('pwd-match');
 
-        // Verifica se as senhas coincidem
-        function checkPasswordMatch() {
-          if (confirmPassword.value && registerPassword.value) {
-            if (confirmPassword.value === registerPassword.value) {
-              matchCheck.className = 'text-xs text-green-500 mt-1';
-              matchCheck.textContent = 'Senhas iguais ✓';
-              return true;
-            } else {
-              matchCheck.className = 'text-xs text-red-500 mt-1';
-              matchCheck.textContent = 'As senhas devem ser iguais';
-              return false;
+          // Função para validar a força da senha
+          function validatePassword() {
+            const pwd = registerPassword.value;
+            
+            // Verificações
+            const hasLength = pwd.length >= 8;
+            const hasUpper = /[A-Z]/.test(pwd);
+            const hasLower = /[a-z]/.test(pwd);
+            const hasNumber = /[0-9]/.test(pwd);
+            const hasSymbol = /[^A-Za-z0-9]/.test(pwd);
+            
+            // Atualiza os indicadores
+            lengthCheck.className = hasLength ? 'text-green-500' : 'text-red-500';
+            upperCheck.className = hasUpper ? 'text-green-500' : 'text-red-500';
+            lowerCheck.className = hasLower ? 'text-green-500' : 'text-red-500';
+            numberCheck.className = hasNumber ? 'text-green-500' : 'text-red-500';
+            symbolCheck.className = hasSymbol ? 'text-green-500' : 'text-red-500';
+            
+            return hasLength && hasUpper && hasLower && hasNumber && hasSymbol;
+          }
+
+          // Verifica se as senhas coincidem
+          function checkPasswordMatch() {
+            if (confirmPassword.value && registerPassword.value) {
+              if (confirmPassword.value === registerPassword.value) {
+                matchCheck.className = 'text-xs text-green-500 mt-1';
+                matchCheck.textContent = 'Senhas iguais ✓';
+                return true;
+              } else {
+                matchCheck.className = 'text-xs text-red-500 mt-1';
+                matchCheck.textContent = 'As senhas devem ser iguais';
+                return false;
+              }
             }
+            return false;
           }
-          return false;
-        }
 
-        registerPassword.addEventListener('input', validatePassword);
-        confirmPassword.addEventListener('input', checkPasswordMatch);
+          registerPassword.addEventListener('input', validatePassword);
+          confirmPassword.addEventListener('input', checkPasswordMatch);
 
-        // Modificar o evento de submit para validar a senha
-        registerForm?.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          if (registerError) registerError.textContent = '';
-          const email = document.getElementById('register-email').value.trim();
-          const password = registerPassword.value;
-          
-          // Validação completa
-          const isValidPassword = validatePassword();
-          const passwordsMatch = checkPasswordMatch();
-          
-          if (!isValidPassword) {
-            registerError.textContent = 'A senha não atende aos requisitos mínimos';
-            return;
-          }
-          
-          if (!passwordsMatch) {
-            registerError.textContent = 'As senhas não coincidem';
-            return;
-          }
-          
-          try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            // Volta ao login com crossfade
-            registerForm.classList.add('is-hidden');
-            loginForm.classList.remove('is-hidden');
-            loginError.textContent = 'Conta criada! Faça login.';
-          } catch (err) {
-            registerError.textContent = 'Erro ao criar conta. ' + (err?.message || '');
-          }
-        });
+          // Define min-height para não “pular”
+          const computeMinHeight = () => {
+              const wasHidden = registerForm.classList.contains('is-hidden');
+              if (wasHidden) registerForm.classList.remove('is-hidden');
+              const maxH = Math.max(loginForm.scrollHeight, registerForm.scrollHeight);
+              if (wasHidden) registerForm.classList.add('is-hidden');
+              document.querySelector('.auth-stack').style.minHeight = maxH + 'px';
+          };
+          computeMinHeight();
+          window.addEventListener('resize', computeMinHeight);
 
-        // Elements
-        const wrapper = document.querySelector('.auth-wrapper');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const showRegisterBtn = document.getElementById('show-register-btn');
-        const backLoginBtn = document.getElementById('back-login-btn');
-        const loginError = document.getElementById('login-error');
-        const registerError = document.getElementById('register-error');
+          // Crossfade
+          showRegisterBtn?.addEventListener('click', () => {
+              if (loginError) loginError.textContent = '';
+              loginForm.classList.add('is-hidden');
+              registerForm.classList.remove('is-hidden');
+          });
+          backLoginBtn?.addEventListener('click', () => {
+              if (registerError) registerError.textContent = '';
+              registerForm.classList.add('is-hidden');
+              loginForm.classList.remove('is-hidden');
+          });
 
-        // Define min-height para não “pular”
-        const computeMinHeight = () => {
-            const wasHidden = registerForm.classList.contains('is-hidden');
-            if (wasHidden) registerForm.classList.remove('is-hidden');
-            const maxH = Math.max(loginForm.scrollHeight, registerForm.scrollHeight);
-            if (wasHidden) registerForm.classList.add('is-hidden');
-            document.querySelector('.auth-stack').style.minHeight = maxH + 'px';
-        };
-        computeMinHeight();
-        window.addEventListener('resize', computeMinHeight);
+          // Submit handlers
+          loginForm?.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              if (loginError) loginError.textContent = '';
+              const email = document.getElementById('login-email').value.trim();
+              const password = document.getElementById('login-password').value;
+              try {
+              await signInWithEmailAndPassword(auth, email, password);
+              window.location.href = "index.html";
+              } catch {
+              loginError.textContent = 'E-mail ou senha inválidos!';
+              }
+          });
 
-        // Crossfade
-        showRegisterBtn?.addEventListener('click', () => {
-            if (loginError) loginError.textContent = '';
-            loginForm.classList.add('is-hidden');
-            registerForm.classList.remove('is-hidden');
-        });
-        backLoginBtn?.addEventListener('click', () => {
-            if (registerError) registerError.textContent = '';
-            registerForm.classList.add('is-hidden');
-            loginForm.classList.remove('is-hidden');
-        });
-
-        // Submit handlers
-        loginForm?.addEventListener('submit', async (e) => {
+          // Modificar o evento de submit para validar a senha
+          registerForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (loginError) loginError.textContent = '';
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
-            try {
-            await signInWithEmailAndPassword(auth, email, password);
-            window.location.href = "index.html";
-            } catch {
-            loginError.textContent = 'E-mail ou senha inválidos!';
+            
+            if (registerError) registerError.textContent = '';
+            const email = document.getElementById('register-email').value.trim();
+            const password = registerPassword.value;
+            
+            // Validação completa
+            const isValidPassword = validatePassword();
+            const passwordsMatch = checkPasswordMatch();
+            
+            if (!isValidPassword) {
+              registerError.textContent = 'A senha não atende aos requisitos mínimos';
+              return;
             }
-        });
+            
+            if (!passwordsMatch) {
+              registerError.textContent = 'As senhas não coincidem';
+              return;
+            }
+            
+            try {
+              await createUserWithEmailAndPassword(auth, email, password);
+              // Volta ao login com crossfade
+              registerForm.classList.add('is-hidden');
+              loginForm.classList.remove('is-hidden');
+              loginError.textContent = 'Conta criada! Faça login.';
+            } catch (err) {
+              registerError.textContent = 'Erro ao criar conta. ' + (err?.message || '');
+            }
+          });
         });
     </script>
 </head>
