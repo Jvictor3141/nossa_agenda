@@ -41,7 +41,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const editRepeat = document.getElementById('edit-special-date-repeat');
     const editTime = document.getElementById('edit-special-date-time');
 
-    document.getElementById('logout-btn')?.addEventListener('click', logoutUser);
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+        try {
+            await window.firebaseSignOut?.(window.firebaseAuth);
+            window.location.href = 'index.html';
+        } catch (err) {
+            console.error(err);
+            showToast('Erro ao sair!');
+        }
+    });
 
     function checkDuplicateSpecialDate() {
         if (!window.specialDatesList) return false;
