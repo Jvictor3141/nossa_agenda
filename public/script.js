@@ -1654,7 +1654,7 @@ async function removeTaskGlobal(taskId, usuario) {
 
 async function logoutUser() {
     try {
-        await window.firebaseAuth.signOut();
+        await window.firebaseSignOut(window.firebaseAuth);
         window.location.href = "index.html";
     } catch (err) {
         showToast('Erro ao fazer logout!');

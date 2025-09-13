@@ -558,8 +558,10 @@
         © 2025 Nossa Vidinha Juntos. Todos os direitos reservados.
     </footer>
     <script type="module">
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
         const auth = getAuth();
+        window.firebaseAuth = auth; // expõe globalmente
+        window.firebaseSignOut = signOut; // expõe globalmente
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
