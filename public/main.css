@@ -175,6 +175,11 @@ input[type="radio"]:checked + label {
     border: none !important;
 }
 
+/* Transição suave para eventos do calendário */
+.fc-daygrid-event {
+    transition: box-shadow 0.3s, background 0.3s, opacity 0.3s;
+}
+
 /* Sábado (índice 6) e Domingo (índice 0) com opacidade 60% */
 .fc-col-header-cell.fc-day-sat,
 .fc-col-header-cell.fc-day-sun {
@@ -300,4 +305,76 @@ html.dark #frequencia-jv {
     color: #f3e8ff !important;
     background: #23232a !important;
     border-color: #444466 !important;
+}
+
+/* Efeito vidro (glassmorphism) para o card de login */
+.login-glass {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(236, 72, 153, 0.18); /* rosa-vibrante com opacidade */
+}
+
+/* Fundo da animação Lottie */
+#bg-lottie {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Novo tema azul para tela de login */
+body.bg-azul-login {
+    background: #a678f5 !important;
+}
+
+/* Glassmorphism do card de login */
+.login-glass {
+    background: rgba(255,255,255,0.25);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(92, 153, 189, 0.18); /* azul tema */
+}
+
+.text-azul-login {
+    color: #b28cf3 !important;
+}
+
+.bg-azul-login-btn {
+    background: #b28cf3 !important;
+    color: #fff !important;
+}
+
+.border-azul-login {
+    border-color: #b28cf3 !important;
+}
+
+/* Crossfade entre painéis (login/cadastro) */
+.auth-wrapper { position: relative; width: min(92vw, 420px); z-index: 1; }
+.auth-stack { position: relative; min-height: 320px; }
+
+.form-panel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity .35s ease;
+}
+.form-panel.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form-panel { transition: none; }
 }

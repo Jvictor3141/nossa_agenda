@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Bem Vindo, faça seu login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="main.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'rosa-bebe': '#fdf2f8',
+                        'rosa-claro': '#fce7f3',
+                        'rosa-medio': '#f9a8d4',
+                        'rosa-vibrante': '#ec4899',
+                        'lavanda': '#f3e8ff'
+                    }
+                }
+            }
+        }
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+        const firebaseConfig = {
+        apiKey: "AIzaSyDoL4R2GmKy7gqnWXKei8V5lflH4plEMkM",
+        authDomain: "agenda-f58b7.firebaseapp.com",
+        projectId: "agenda-f58b7",
+        storageBucket: "agenda-f58b7.firebasestorage.app",
+        messagingSenderId: "88974735864",
+        appId: "1:88974735864:web:0e9a029173d6409f61be0d",
+        measurementId: "G-0DSR8JY53N"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => { if (user) window.location.href = "index.html"; });
+
+        window.addEventListener('DOMContentLoaded', () => {
+        // Lottie bg
+        if (window.lottie) {
+            window.lottie.loadAnimation({
+            container: document.getElementById('bg-lottie'),
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'assets/animations/bg-animation.json'
+            });
+        }
+
+        // Elements
+        const wrapper = document.querySelector('.auth-wrapper');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register-btn');
+        const backLoginBtn = document.getElementById('back-login-btn');
+        const loginError = document.getElementById('login-error');
+        const registerError = document.getElementById('register-error');
+
+        // Define min-height para não “pular”
+        const computeMinHeight = () => {
+            const wasHidden = registerForm.classList.contains('is-hidden');
+            if (wasHidden) registerForm.classList.remove('is-hidden');
+            const maxH = Math.max(loginForm.scrollHeight, registerForm.scrollHeight);
+            if (wasHidden) registerForm.classList.add('is-hidden');
+            document.querySelector('.auth-stack').style.minHeight = maxH + 'px';
+        };
+        computeMinHeight();
+        window.addEventListener('resize', computeMinHeight);
+
+        // Crossfade
+        showRegisterBtn?.addEventListener('click', () => {
+            loginError.textContent = '';
+            loginForm.classList.add('is-hidden');
+            registerForm.classList.remove('is-hidden');
+        });
+        backLoginBtn?.addEventListener('click', () => {
+            if (registerError) registerError.textContent = '';
+            registerForm.classList.add('is-hidden');
+            loginForm.classList.remove('is-hidden');
+        });
+
+        // Submit handlers
+        loginForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginError.textContent = '';
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            try {
+            await signInWithEmailAndPassword(auth, email, password);
+            window.location.href = "index.html";
+            } catch {
+            loginError.textContent = 'E-mail ou senha inválidos!';
+            }
+        });
+
+        registerForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            registerError.textContent = '';
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            // Volta ao login com crossfade
+            registerForm.classList.add('is-hidden');
+            loginForm.classList.remove('is-hidden');
+            loginError.textContent = 'Conta criada! Faça login.';
+            } catch (err) {
+            registerError.textContent = 'Erro ao criar conta. ' + (err?.message || '');
+            }
+        });
+        });
+    </script>
+</head>
+<body class="bg-azul-login flex items-center justify-center min-h-screen">
+  <div id="bg-lottie" style="position:fixed; inset:0; z-index:0; pointer-events:none;"></div>
+
+  <div class="login-glass p-8 auth-wrapper" style="z-index:1;">
+    <div class="auth-stack">
+      <!-- Login -->
+      <form id="login-form" class="form-panel space-y-4">
+        <h3 class="text-lg font-bold text-azul-login mb-2 text-center">Entrar na Agenda</h3>
+        <div>
+          <label class="block text-sm font-medium mb-1">E-mail:</label>
+          <input type="email" id="login-email" class="w-full px-3 py-2 border border-azul-login rounded-lg" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Senha:</label>
+          <input type="password" id="login-password" class="w-full px-3 py-2 border border-azul-login rounded-lg" required>
+        </div>
+        <button type="submit" class="w-full bg-azul-login-btn py-2 rounded-lg hover:opacity-90 transition-colors font-medium">Entrar</button>
+        <button id="show-register-btn" type="button" class="mt-2 w-full bg-gray-200 text-azul-login py-2 rounded-lg hover:bg-gray-300 font-medium">Criar uma conta</button>
+        <div id="login-error" class="mt-2 text-red-500 text-sm font-semibold"></div>
+      </form>
+
+      <!-- Cadastro -->
+      <form id="register-form" class="form-panel is-hidden space-y-4">
+        <h3 class="text-lg font-bold text-azul-login mb-2 text-center">Bem Vindo ao LifeSync</h3>
+        <div>
+          <label class="block text-sm font-medium mb-1">E-mail:</label>
+          <input type="email" id="register-email" class="w-full px-3 py-2 border border-azul-login rounded-lg" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Senha:</label>
+          <input type="password" id="register-password" class="w-full px-3 py-2 border border-azul-login rounded-lg" required>
+        </div>
+        <button type="submit" class="w-full bg-azul-login-btn text-white py-2 rounded-lg hover:bg-rosa-medio transition-colors font-medium">Criar Conta</button>
+        <button type="button" id="back-login-btn" class="mt-2 w-full bg-gray-200 text-azul-login py-2 rounded-lg hover:bg-gray-300 font-medium">Voltar ao login</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
