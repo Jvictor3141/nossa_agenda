@@ -1651,13 +1651,3 @@ async function removeTaskGlobal(taskId, usuario) {
     }
     showToast('Tarefa removida!');
 }
-
-async function logoutUser() {
-    try {
-        await window.firebaseSignOut(window.firebaseAuth);
-        window.location.href = "index.html";
-    } catch (err) {
-        showToast('Erro ao fazer logout!');
-        console.error(err);
-    }
-}

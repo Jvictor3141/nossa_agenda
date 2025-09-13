@@ -558,23 +558,23 @@
         © 2025 Nossa Vidinha Juntos. Todos os direitos reservados.
     </footer>
     <script type="module">
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-        const auth = getAuth();
-        window.firebaseAuth = auth; // expõe globalmente
-        window.firebaseSignOut = signOut; // expõe globalmente
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = "index.html";
-            }
-        });
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-        window.firestoreCollection = collection;
-        window.firestoreGetDocs = getDocs;
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            getDoc,
+            onSnapshot,
+            collection,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-        // Configuração do Firebase
+        // 1) Inicialize o Firebase ANTES de usar Auth/Firestore
         const firebaseConfig = {
             apiKey: "AIzaSyDoL4R2GmKy7gqnWXKei8V5lflH4plEMkM",
             authDomain: "agenda-f58b7.firebaseapp.com",
@@ -584,22 +584,37 @@
             appId: "1:88974735864:web:0e9a029173d6409f61be0d",
             measurementId: "G-0DSR8JY53N"
         };
-
-        // Inicializa Firebase e Firestore e expõe no window
         const app = initializeApp(firebaseConfig);
+
+        // 2) Agora pegue Auth/DB e exponha no window para o script.js
+        const auth = getAuth(app);
         const db = getFirestore(app);
+
+        window.firebaseAuth = auth;
+        window.firebaseSignOut = signOut;
+
         window.db = db;
         window.firestoreDoc = doc;
         window.firestoreSetDoc = setDoc;
         window.firestoreGetDoc = getDoc;
         window.firestoreOnSnapshot = onSnapshot;
+        window.firestoreCollection = collection;
+        window.firestoreGetDocs = getDocs;
 
+        // 3) Proteja a página: se não estiver logado, manda para login
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "index.html";
+        });
+
+        // 4) Botão de logout (opcional aqui; se já usa logoutUser no script.js, pode remover este)
         document.getElementById('logout-btn')?.addEventListener('click', async () => {
             try {
-                await signOut(auth);
-                window.location.href = "login.html";
+            await signOut(auth);
+            window.location.href = "index.html";
             } catch (err) {
-                showToast('Erro ao sair!');
+            // showToast é definido em script.js; ele será carregado depois
+            console.error(err);
+            alert('Erro ao sair.');
             }
         });
     </script>
