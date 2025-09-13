@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const editRepeat = document.getElementById('edit-special-date-repeat');
     const editTime = document.getElementById('edit-special-date-time');
 
+    document.getElementById('logout-btn')?.addEventListener('click', logoutUser);
+
     function checkDuplicateSpecialDate() {
         if (!window.specialDatesList) return false;
         const nome = specialDateNameInput.value.trim();
@@ -1648,4 +1650,14 @@ async function removeTaskGlobal(taskId, usuario) {
         window.calendarInstance.refetchEvents();
     }
     showToast('Tarefa removida!');
+}
+
+async function logoutUser() {
+    try {
+        await window.firebaseAuth.signOut();
+        window.location.href = "index.html";
+    } catch (err) {
+        showToast('Erro ao fazer logout!');
+        console.error(err);
+    }
 }
