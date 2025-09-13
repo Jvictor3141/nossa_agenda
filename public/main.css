@@ -411,3 +411,11 @@ body.bg-azul-login {
 @media (prefers-reduced-motion: reduce) {
   .form-panel { transition: none; }
 }
+
+/* Cores adicionais */
+.text-green-500 {
+  color: #10b981;
+}
+.text-red-500 {
+  color: #ef4444;
+}

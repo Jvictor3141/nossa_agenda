@@ -54,6 +54,89 @@
             });
         }
 
+        // Validação de senha em tempo real
+        const registerPassword = document.getElementById('register-password');
+        const confirmPassword = document.getElementById('register-password-confirm');
+        const lengthCheck = document.getElementById('pwd-length');
+        const upperCheck = document.getElementById('pwd-upper');
+        const lowerCheck = document.getElementById('pwd-lower');
+        const numberCheck = document.getElementById('pwd-number');
+        const symbolCheck = document.getElementById('pwd-symbol');
+        const matchCheck = document.getElementById('pwd-match');
+
+        // Função para validar a força da senha
+        function validatePassword() {
+          const pwd = registerPassword.value;
+          
+          // Verificações
+          const hasLength = pwd.length >= 8;
+          const hasUpper = /[A-Z]/.test(pwd);
+          const hasLower = /[a-z]/.test(pwd);
+          const hasNumber = /[0-9]/.test(pwd);
+          const hasSymbol = /[^A-Za-z0-9]/.test(pwd);
+          
+          // Atualiza os indicadores
+          lengthCheck.className = hasLength ? 'text-green-500' : 'text-red-500';
+          upperCheck.className = hasUpper ? 'text-green-500' : 'text-red-500';
+          lowerCheck.className = hasLower ? 'text-green-500' : 'text-red-500';
+          numberCheck.className = hasNumber ? 'text-green-500' : 'text-red-500';
+          symbolCheck.className = hasSymbol ? 'text-green-500' : 'text-red-500';
+          
+          return hasLength && hasUpper && hasLower && hasNumber && hasSymbol;
+        }
+
+        // Verifica se as senhas coincidem
+        function checkPasswordMatch() {
+          if (confirmPassword.value && registerPassword.value) {
+            if (confirmPassword.value === registerPassword.value) {
+              matchCheck.className = 'text-xs text-green-500 mt-1';
+              matchCheck.textContent = 'Senhas iguais ✓';
+              return true;
+            } else {
+              matchCheck.className = 'text-xs text-red-500 mt-1';
+              matchCheck.textContent = 'As senhas devem ser iguais';
+              return false;
+            }
+          }
+          return false;
+        }
+
+        registerPassword.addEventListener('input', validatePassword);
+        confirmPassword.addEventListener('input', checkPasswordMatch);
+
+        // Modificar o evento de submit para validar a senha
+        registerForm?.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          if (registerError) registerError.textContent = '';
+          const email = document.getElementById('register-email').value.trim();
+          const password = registerPassword.value;
+          
+          // Validação completa
+          const isValidPassword = validatePassword();
+          const passwordsMatch = checkPasswordMatch();
+          
+          if (!isValidPassword) {
+            registerError.textContent = 'A senha não atende aos requisitos mínimos';
+            return;
+          }
+          
+          if (!passwordsMatch) {
+            registerError.textContent = 'As senhas não coincidem';
+            return;
+          }
+          
+          try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            // Volta ao login com crossfade
+            registerForm.classList.add('is-hidden');
+            loginForm.classList.remove('is-hidden');
+            loginError.textContent = 'Conta criada! Faça login.';
+          } catch (err) {
+            registerError.textContent = 'Erro ao criar conta. ' + (err?.message || '');
+          }
+        });
+
         // Elements
         const wrapper = document.querySelector('.auth-wrapper');
         const loginForm = document.getElementById('login-form');
@@ -149,6 +232,21 @@
         <div>
           <label class="block text-sm font-medium mb-1">Senha:</label>
           <input type="password" id="register-password" class="w-full px-3 py-2 border border-azul-login rounded-lg" required>
+          <div class="text-xs text-gray-500 mt-1">
+            A senha deve ter no mínimo 8 caracteres e incluir:
+            <ul class="list-disc ml-4 mt-1">
+              <li id="pwd-length" class="text-red-500">8 caracteres</li>
+              <li id="pwd-upper" class="text-red-500">Letra maiúscula</li>
+              <li id="pwd-lower" class="text-red-500">Letra minúscula</li>
+              <li id="pwd-number" class="text-red-500">Número</li>
+              <li id="pwd-symbol" class="text-red-500">Símbolo</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Confirmar Senha:</label>
+          <input type="password" id="register-password-confirm" class="w-full px-3 py-2 border border-azul-login rounded-lg" required>
+          <div id="pwd-match" class="text-xs text-red-500 mt-1">As senhas devem ser iguais</div>
         </div>
         <button type="submit" class="w-full bg-azul-login-btn text-white py-2 rounded-lg hover:bg-rosa-medio transition-colors font-medium">Criar Conta</button>
         <button type="button" id="back-login-btn" class="mt-2 w-full bg-gray-200 text-azul-login py-2 rounded-lg hover:bg-gray-300 font-medium">Voltar ao login</button>
