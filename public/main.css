@@ -419,3 +419,292 @@ body.bg-azul-login {
 .text-red-500 {
   color: #ef4444;
 }
+
+/* Variáveis e mapeamento do tema (pode ficar no final do arquivo) */
+:root {
+  --accent: #ec4899;       /* cor principal */
+  --accent-soft: #f9a8d4;  /* variante suave */
+  --border-color: #f3e8ff; /* bordas */
+  --page-bg: #fdf2f8;  /* fundo da página */
+}
+
+/* Mapeia utilitários do projeto/Tailwind para variáveis do tema */
+.text-rosa-vibrante { color: var(--accent) !important; }
+.bg-rosa-vibrante { background-color: var(--accent) !important; }
+.bg-rosa-medio    { background-color: var(--accent-soft) !important; }
+.border-lavanda   { border-color: var(--border-color) !important; }
+
+/* FullCalendar usando as variáveis do tema */
+.fc-toolbar-title { color: var(--accent) !important; }
+
+.fc-button-primary {
+  background-color: var(--accent-soft) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: 0.5rem !important;
+}
+.fc-button-primary:not(:disabled):hover {
+  background-color: var(--accent) !important;
+}
+
+/* Cabeçalho dos dias (usa uma mistura para ficar mais suave) */
+.fc-col-header-cell {
+  background: color-mix(in srgb, var(--accent) 20%, white) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none !important;
+}
+
+/* Hover/seleção do dia com a cor do tema */
+.fc-daygrid-day:hover,
+.fc-daygrid-day.selected-day {
+  background: color-mix(in srgb, var(--accent) 20%, transparent) !important;
+  transition: background 0.2s;
+}
+
+/* Modal de configurações */
+#settings-modal {
+  display: none;
+}
+#settings-modal.active {
+  display: flex;
+}
+.settings-card {
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  max-width: 720px;
+  width: 92vw;
+}
+
+/* Inputs dark mode (reaproveita seu padrão) */
+html.dark #settings-modal input,
+html.dark #settings-modal select,
+html.dark #settings-modal textarea {
+  background: #23232a !important;
+  color: #f3e8ff !important;
+  border-color: #444466 !important;
+}
+html.dark #settings-modal input::placeholder {
+  color: #c7c7d1 !important;
+}
+
+/* Transições suaves */
+#settings-modal .fade {
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+/* Fundo da página usa a variável (agenda) */
+body.bg-rosa-bebe {
+  background: var(--page-bg) !important;
+}
+
+/* Hoje (no calendário) com a cor do tema */
+.fc-daygrid-day.fc-day-today {
+  background: transparent !important;
+  position: relative;
+}
+
+/* Cabeçalho de sábado e domingo com o tema */
+.fc-col-header-cell.fc-day-sat,
+.fc-col-header-cell.fc-day-sun {
+  background: color-mix(in srgb, var(--accent) 14%, white) !important;
+  color: var(--accent) !important;
+}
+
+/* (Opcional) Tonalidade suave no grid de sábado/domingo */
+.fc-daygrid-day.fc-day-sat,
+.fc-daygrid-day.fc-day-sun {
+  background: color-mix(in srgb, var(--accent) 8%, white) !important;
+}
+
+/* FullCalendar – dark mode (cores legíveis) */
+html.dark .fc,
+html.dark .fc .fc-view-harness,
+html.dark .fc .fc-scrollgrid {
+  background: transparent !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+html.dark .fc .fc-col-header-cell {
+  background: #111827 !important;
+  color: var(--accent) !important;
+  border-color: #374151 !important;
+}
+html.dark .fc .fc-daygrid-day {
+  background: #0f172a !important;
+  border-color: #1f2937 !important;
+}
+html.dark .fc .fc-daygrid-day-number { color: #e5e7eb !important; }
+html.dark .fc .fc-daygrid-day:hover,
+html.dark .fc .fc-daygrid-day.selected-day {
+  background: color-mix(in srgb, var(--accent) 22%, #0f172a) !important;
+}
+html.dark .fc .fc-daygrid-day.fc-day-today {
+  background: color-mix(in srgb, var(--accent) 28%, #0f172a) !important;
+}
+html.dark .fc .fc-col-header-cell.fc-day-sat,
+html.dark .fc .fc-col-header-cell.fc-day-sun {
+  background: color-mix(in srgb, var(--accent) 20%, #111827) !important;
+  color: #e5e7eb !important;
+}
+html.dark .fc .fc-button-primary {
+  background-color: var(--accent) !important;
+  border: none !important;
+  color: #fff !important;
+}
+html.dark .fc .fc-button-primary:not(:disabled):hover {
+  background-color: var(--accent-soft) !important;
+}
+
+/* Botão do menu hambúrguer */
+html.dark .hamburger {
+  background-color: var(--accent) !important;
+  border-color: var(--border-color) !important;
+}
+html.dark .hamburger:hover {
+  background-color: var(--accent-soft) !important;
+}
+
+/* Botões de ação que usam bg-rosa-medio/rosa-vibrante (ex.: “+” adicionar tarefa) */
+html.dark button.bg-rosa-medio,
+html.dark .bg-rosa-medio.text-white,
+html.dark .bg-rosa-vibrante.text-white {
+  background-color: var(--accent) !important;
+  color: #fff !important;
+}
+/* Utilitário hover do Tailwind via CDN */
+html.dark .hover\:bg-rosa-vibrante:hover {
+  background-color: var(--accent-soft) !important;
+}
+
+/* Bolinhas ao lado dos títulos dos períodos (span w-3 h-3 bg-rosa-medio) */
+html.dark .w-3.h-3.bg-rosa-medio,
+html.dark .rounded-full.bg-rosa-medio {
+  background-color: var(--accent) !important;
+}
+
+/* Rodapé */
+html.dark footer.bg-rosa-medio {
+  background: color-mix(in srgb, var(--accent) 28%, #0b1220) !important;
+  color: #e5e7eb !important;
+  border-top: 1px solid var(--border-color) !important;
+}
+
+/* Settings modal layout */
+#settings-modal { display:none; align-items:center; justify-content:center; }
+#settings-modal.active { display:flex; } /* caso queira usar classe em vez de JS */
+#settings-modal .settings-card {
+  background: rgba(255,255,255,0.92) !important;
+  color: #111827;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  max-width: 720px;
+  width: 92vw;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
+}
+#settings-modal h2 { color: var(--accent); }
+#settings-modal h3 { color: #1f2937; }
+#settings-close { color:#9ca3af; }
+#settings-close:hover { color:#ef4444; }
+
+/* Dark theme do modal */
+html.dark #settings-modal .settings-card {
+  background: rgba(17,24,39,0.92) !important; /* slate-900 ~ 0.92 */
+  color: #e5e7eb;
+  border-color: #374151;
+}
+html.dark #settings-modal h3 { color:#e5e7eb; }
+html.dark #settings-close { color:#9ca3af; }
+html.dark #settings-close:hover { color:#f87171; }
+
+/* Input de cor arredondado (color picker) */
+#theme-accent[type="color"]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:42px; height:42px;
+  padding:0; border-radius:9999px;
+  border:2px solid var(--border-color);
+  background:none; cursor:pointer;
+  box-shadow: 0 0 0 0 transparent; outline: none;
+}
+#theme-accent::-webkit-color-swatch-wrapper{ padding:0; border-radius:9999px; }
+#theme-accent::-webkit-color-swatch{ border:none; border-radius:9999px; }
+#theme-accent::-moz-color-swatch{ border:none; border-radius:9999px; }
+#theme-accent:focus{ outline:2px solid var(--accent); outline-offset:2px; }
+html.dark #theme-accent{ border-color:#444466; }
+
+/* === Botão "Mostrar calendário" temático (normal e dark) === */
+#toggle-calendar{
+  /* fundo suave a partir do accent */
+  background: color-mix(in srgb, var(--accent) 15%, transparent) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--accent) !important; /* reforça o texto em caso de util do Tailwind */
+}
+#toggle-calendar:hover{
+  background: color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+html.dark #toggle-calendar{
+  background: color-mix(in srgb, var(--accent) 18%, #0f172a) !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+html.dark #toggle-calendar:hover{
+  background: color-mix(in srgb, var(--accent) 32%, #0f172a) !important;
+}
+
+/* === Hover das opções do menu hambúrguer (normal e dark) === */
+/* Força o hover dos botões da sidebar a seguir o tema (sobrepõe hover:bg-rosa-claro do Tailwind) */
+#sidebar button:hover{
+  background: color-mix(in srgb, var(--accent) 18%, white) !important;
+}
+html.dark #sidebar button:hover{
+  background: color-mix(in srgb, var(--accent) 22%, #111827) !important;
+  color: #e5e7eb !important;
+}
+
+/* === Destaque dos rádios de cor (selecionado e foco) com o tema === */
+/* Já havia um seletor; atualizamos para usar as variáveis do tema */
+input[type="radio"]:checked + label{
+  border-color: var(--accent) !important;
+  /* anel suave com a cor do tema */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent) !important;
+}
+/* Acessibilidade: quando navegar por teclado, mostra anel de foco */
+input[type="radio"]:focus-visible + label{
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+html.dark input[type="radio"]:checked + label{
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, #0f172a) !important;
+}
+html.dark input[type="radio"]:focus-visible + label{
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* === Destaque do dia atual no calendário (normal e dark) === */
+.fc-daygrid-day.fc-day-today::after {
+  content: "";
+  position: absolute;
+  inset: 2px;                /* margem interna para não colidir com a grade */
+  border: 2px solid var(--accent);
+  border-radius: 8px;        /* combina com o visual arredondado */
+  pointer-events: none;
+}
+
+/* Enfatiza o número do dia de hoje (ambos os temas) */
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  font-weight: 700;
+}
+
+/* Dark: número do dia de hoje igual aos demais (branco) */
+html.dark .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  color: #e5e7eb !important;
+}

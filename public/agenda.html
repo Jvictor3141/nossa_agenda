@@ -94,7 +94,7 @@
                     </button>
                 </li>
                 <li>
-                    <button onclick="showSettings()" class="w-full flex items-center p-3 text-left rounded-lg hover:bg-rosa-claro transition-colors">
+                    <button id="open-settings-btn" onclick="showSettings()" class="w-full flex items-center p-3 text-left rounded-lg hover:bg-rosa-claro transition-colors">
                         <span class="text-2xl mr-3">⚙️</span>
                         <span class="text-gray-700 font-medium">Configurações</span>
                     </button>
@@ -181,7 +181,7 @@
 
             <!-- Dia de Larissa -->
             <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
-                <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de Larissa</h3>
+                <h3 id="title-larissa" class="text-lg font-medium text-gray-800 mb-4">Dia de Larissa</h3>
 
                 <!-- Adicionar Tarefa Unificada -->
                 <div class="flex flex-col md:flex-row gap-2 mb-4 justify-center items-center w-full">
@@ -267,7 +267,7 @@
 
             <!-- Dia de João Victor -->
             <div class="mt-8 bg-white rounded-xl shadow-md border border-lavanda p-6">
-                <h3 class="text-lg font-medium text-gray-800 mb-4">Dia de João Victor</h3>
+                <h3 id="title-jv" class="text-lg font-medium text-gray-800 mb-4">Dia de João Victor</h3>
 
                 <!-- Adicionar Tarefa Unificada -->
                 <div class="flex flex-col md:flex-row gap-2 mb-4 justify-center items-center w-full">
@@ -554,6 +554,57 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Configurações -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-[60]" style="display:none;">
+        <div class="settings-card p-6 relative opacity-0 translate-y-2" style="background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border:1px solid var(--border-color);border-radius:16px;max-width:720px;width:92vw;">
+            <button id="settings-close" class="absolute top-3 right-3 text-gray-400 text-2xl" title="Fechar">×</button>
+            <h2 class="text-xl font-semibold text-rosa-vibrante mb-4">Configurações</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <section class="border border-lavanda rounded p-4">
+                    <h3 class="font-medium mb-2">Tema da Agenda</h3>
+                    <label class="block text-sm text-gray-600 mb-2">Cor principal</label>
+                    <input id="theme-accent" type="color" value="#ec4899" class="w-16 h-10 p-0 border border-lavanda rounded cursor-pointer">
+                </section>
+
+                <section class="border border-lavanda rounded p-4">
+                    <h3 class="font-medium mb-2">Notificações</h3>
+                    <label class="inline-flex items-center gap-2 mb-3">
+                        <input id="notif-enabled" type="checkbox"> Ativar notificações
+                    </label>
+                    <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">WhatsApp</label>
+                        <input id="notif-phone" type="tel" placeholder="11999999999" class="w-full px-3 py-2 border border-lavanda rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">E-mail</label>
+                        <input id="notif-email" type="email" placeholder="voce@email.com" class="w-full px-3 py-2 border border-lavanda rounded">
+                    </div>
+                    </div>
+                </section>
+
+                <section class="md:col-span-2 border border-lavanda rounded p-4">
+                    <h3 class="font-medium mb-3">Informações dos Usuários</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Usuário 1</label>
+                        <input id="user-name-larissa" type="text" placeholder="Larissa" class="w-full px-3 py-2 border border-lavanda rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Usuário 2</label>
+                        <input id="user-name-jv" type="text" placeholder="João Victor" class="w-full px-3 py-2 border border-lavanda rounded">
+                    </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+            <button id="settings-save" class="px-4 py-2 rounded bg-rosa-vibrante text-white">Salvar alterações</button>
+            </div>
+        </div>
+    </div>
     <footer class="w-full mt-12 py-6 bg-rosa-medio bg-opacity-80 text-center text-gray-100 text-sm">
         © 2025 Nossa Vidinha Juntos. Todos os direitos reservados.
     </footer>
@@ -574,7 +625,7 @@
             getDocs
         } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-        // 1) Inicialize o Firebase ANTES de usar Auth/Firestore
+        // 1) Inicializeando o Firebase ANTES de usar Auth/Firestore
         const firebaseConfig = {
             apiKey: "AIzaSyDoL4R2GmKy7gqnWXKei8V5lflH4plEMkM",
             authDomain: "agenda-f58b7.firebaseapp.com",
@@ -586,7 +637,7 @@
         };
         const app = initializeApp(firebaseConfig);
 
-        // 2) Agora pegue Auth/DB e exponha no window para o script.js
+        // 2) Agora pegueando o Auth/DB e expondo no window para o script.js
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -601,7 +652,7 @@
         window.firestoreCollection = collection;
         window.firestoreGetDocs = getDocs;
 
-        // 3) Proteja a página: se não estiver logado, manda para login
+        // 3)se não estiver logado, manda para login
         onAuthStateChanged(auth, (user) => {
             if (!user) window.location.href = "index.html";
         });

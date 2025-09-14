@@ -30,7 +30,7 @@ const meses = [
 ];
 
 // Inicializar aplicação
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     //alerta de duplicidade
     const specialDateNameInput = document.getElementById('special-date-name');
     const specialDateDateInput = document.getElementById('special-date-date');
@@ -145,6 +145,16 @@ document.addEventListener('DOMContentLoaded', function() {
     renderAllTasksJV();
     updateTaskCounts();
     loadSpecialDatesFromFirebase();
+    await loadAppSettingsFromFirebase();
+
+    document.getElementById('theme-accent')?.addEventListener('input', (e) => {
+        const accent = e.target.value;
+        const accentSoft = lighten(accent, 0.55);
+        const border = lighten(accent, 0.80);
+        const pageBg = lighten(accent, 0.92); // fundo suave derivado da cor principal
+        appSettings.theme = { accent, accentSoft, border, pageBg };
+        applyThemeVars(appSettings.theme);
+    });
 
     // Avançado Larissa
     const avancadoLarissa = document.getElementById('avancado-larissa');
@@ -1659,3 +1669,139 @@ async function removeTaskGlobal(taskId, usuario) {
     }
     showToast('Tarefa removida!');
 }
+
+// Estado de configurações (padrões)
+let appSettings = {
+  theme: { accent: '#ec4899', accentSoft: '#f9a8d4', border: '#f3e8ff', pageBg: '#fdf2f8' },
+  notifications: { enabled: false, phone: '', email: '' },
+  users: { larissa: 'Larissa', joaovictor: 'João Victor' }
+};
+
+// Util: clarear cor (gera variação "soft")
+function lighten(hex, pct) {
+    const n = hex.replace('#','');
+    const bigint = parseInt(n.length === 3 ? n.split('').map(c=>c+c).join('') : n, 16);
+    let r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
+    r = Math.round(r + (255 - r) * pct);
+    g = Math.round(g + (255 - g) * pct);
+    b = Math.round(b + (255 - b) * pct);
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+function applyThemeVars({accent, accentSoft, border, pageBg}) {
+  const root = document.documentElement;
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--accent-soft', accentSoft);
+  root.style.setProperty('--border-color', border);
+  root.style.setProperty('--page-bg', pageBg || '#fdf2f8');
+}
+
+function fillSettingsUI() {
+    // Inputs do modal
+    const elAccent = document.getElementById('theme-accent');
+    const notifEnabled = document.getElementById('notif-enabled');
+    const notifPhone = document.getElementById('notif-phone');
+    const notifEmail = document.getElementById('notif-email');
+    const nameLarissa = document.getElementById('user-name-larissa');
+    const nameJV = document.getElementById('user-name-jv');
+
+    if (elAccent) elAccent.value = appSettings.theme.accent;
+    if (notifEnabled) notifEnabled.checked = !!appSettings.notifications.enabled;
+    if (notifPhone) notifPhone.value = appSettings.notifications.phone || '';
+    if (notifEmail) notifEmail.value = appSettings.notifications.email || '';
+    if (nameLarissa) nameLarissa.value = appSettings.users.larissa || 'Larissa';
+    if (nameJV) nameJV.value = appSettings.users.joaovictor || 'João Victor';
+}
+
+function applyUserNames() {
+    const t1 = document.getElementById('title-larissa');
+    const t2 = document.getElementById('title-jv');
+    if (t1) t1.textContent = `Dia de ${appSettings.users.larissa || 'Larissa'}`;
+    if (t2) t2.textContent = `Dia de ${appSettings.users.joaovictor || 'João Victor'}`;
+}
+
+// Firestore: carregar/salvar configurações (doc: settings/app)
+async function loadAppSettingsFromFirebase() {
+  try {
+    const docRef = window.firestoreDoc(window.db, 'settings', 'app');
+    const snap = await window.firestoreGetDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const accent = data?.theme?.accent || appSettings.theme.accent;
+      const accentSoft = data?.theme?.accentSoft || appSettings.theme.accentSoft;
+      const border = data?.theme?.border || appSettings.theme.border;
+      const pageBg = data?.theme?.pageBg || '#fdf2f8';
+
+      appSettings = {
+        theme: { accent, accentSoft, border, pageBg },
+        notifications: {
+          enabled: !!data?.notifications?.enabled,
+          phone: data?.notifications?.phone || '',
+          email: data?.notifications?.email || ''
+        },
+        users: {
+          larissa: data?.users?.larissa || appSettings.users.larissa,
+          joaovictor: data?.users?.joaovictor || appSettings.users.joaovictor
+        }
+      };
+    }
+    applyThemeVars(appSettings.theme);
+    applyUserNames();
+    fillSettingsUI();
+  } catch (e) {
+    console.warn('Falha ao carregar settings:', e);
+  }
+}
+
+async function saveAppSettingsToFirebase() {
+    try {
+        await window.firestoreSetDoc(
+            window.firestoreDoc(window.db, 'settings', 'app'),
+            appSettings
+        );
+        showToast('Configurações salvas!');
+    } catch (e) {
+        showToast('Erro ao salvar configurações!');
+        console.error(e);
+    }
+}
+
+// Abrir/fechar modal
+function openSettingsModal(){
+  const modal = document.getElementById('settings-modal');
+  const card = modal?.querySelector('.settings-card');
+  if(!modal || !card) return;
+  modal.style.display = 'flex';
+  requestAnimationFrame(()=>{ card.classList.remove('opacity-0','translate-y-2'); });
+}
+function closeSettingsModal(){
+  const modal = document.getElementById('settings-modal');
+  const card = modal?.querySelector('.settings-card');
+  if(!modal || !card) return;
+  card.classList.add('opacity-0','translate-y-2');
+  setTimeout(()=> modal.style.display = 'none', 200);
+}
+function showSettings(){ openSettingsModal(); }
+
+// Bind de eventos do modal e carga inicial
+document.addEventListener('DOMContentLoaded', async () => {
+
+    // Fechar modal (X ou fora do card)
+    document.getElementById('settings-close')?.addEventListener('click', closeSettingsModal);
+    document.getElementById('settings-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'settings-modal') closeSettingsModal();
+    });
+
+    // Notificações
+    document.getElementById('notif-enabled')?.addEventListener('change', (e)=> appSettings.notifications.enabled = !!e.target.checked);
+    document.getElementById('notif-phone')?.addEventListener('input', (e)=> appSettings.notifications.phone = e.target.value.trim());
+    document.getElementById('notif-email')?.addEventListener('input', (e)=> appSettings.notifications.email = e.target.value.trim());
+    document.getElementById('user-name-larissa')?.addEventListener('input', (e)=>{ appSettings.users.larissa = e.target.value.trim() || 'Larissa'; applyUserNames(); });
+    document.getElementById('user-name-jv')?.addEventListener('input', (e)=>{ appSettings.users.joaovictor = e.target.value.trim() || 'João Victor'; applyUserNames(); });
+    document.getElementById('settings-save')?.addEventListener('click', async ()=>{ await saveAppSettingsToFirebase(); closeSettingsModal(); });
+    // Salvar
+    document.getElementById('settings-save')?.addEventListener('click', async () => {
+        await saveAppSettingsToFirebase();
+        closeSettingsModal();
+    });
+});
